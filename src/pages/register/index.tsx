@@ -1,11 +1,10 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import "./register.css";
 
 export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-800 flex items-center justify-center text-zinc-100 p-6 relative">
-  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[48rem] bg-emerald-500 rounded-xl opacity-80 z-0"></div>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[48rem] bg-emerald-500 rounded-xl opacity-80 z-0"></div>
       <div className="w-full max-w-md rounded-3xl bg-zinc-900/70 border border-white/10 shadow-2xl p-8 relative z-10">
         <h1 className="text-3xl font-bold text-center">Criar Conta</h1>
         <p className="mt-2 text-center text-zinc-400">
@@ -41,11 +40,22 @@ export default function RegisterPage() {
           />
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
-              <input type="radio" name="role" value="student" className="accent-emerald-500" defaultChecked />
+              <input
+                type="radio"
+                name="role"
+                value="student"
+                className="accent-emerald-500"
+                defaultChecked
+              />
               <span>Sou estudante</span>
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="role" value="teacher" className="accent-emerald-500" />
+              <input
+                type="radio"
+                name="role"
+                value="teacher"
+                className="accent-emerald-500"
+              />
               <span>Sou professor(a)</span>
             </label>
           </div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const appName = "Unificado";
@@ -27,19 +27,27 @@ export default function HomePage() {
   };
 
   return (
-    <main className={`min-h-screen flex items-center justify-center p-6 transition-colors duration-300 ${theme} relative bg-gradient-to-b from-black to-zinc-900 text-white`}>
+    <main
+      className={`min-h-screen flex items-center justify-center p-6 transition-colors duration-300 ${theme} relative bg-gradient-to-b from-black to-zinc-900 text-white`}
+    >
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[50vh] bg-emerald-500 rounded-xl opacity-80 z-0"></div>
       <div className="w-full max-w-xl relative z-10 flex flex-col items-center justify-center text-center min-h-[70vh]">
         <header className="mb-8">
-          <h1 className="text-5xl font-extrabold tracking-tight text-emerald-400">{appName}</h1>
+          <h1 className="text-5xl font-extrabold tracking-tight text-emerald-400">
+            {appName}
+          </h1>
           <p className="mt-3 text-zinc-200 max-w-md mx-auto">
             Bem-vindo(a)! Escolha uma das opções abaixo para continuar.
           </p>
         </header>
         <section className="flex flex-col items-center justify-center rounded-3xl bg-zinc-900/80 backdrop-blur border border-white/10 shadow-2xl overflow-hidden w-full">
           <div className="p-8 flex flex-col items-center justify-center text-center">
-            <h2 className="text-2xl font-bold text-emerald-400">Comece por aqui!</h2>
-            <p className="mt-2 text-zinc-400">Acesse sua conta ou crie um novo cadastro.</p>
+            <h2 className="text-2xl font-bold text-emerald-400">
+              Comece por aqui!
+            </h2>
+            <p className="mt-2 text-zinc-400">
+              Acesse sua conta ou crie um novo cadastro.
+            </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-4 w-full justify-center">
               <Link
                 to="/login"
@@ -56,8 +64,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className="px-8 py-4 bg-gradient-to-r from-zinc-900/60 via-zinc-900/30 to-zinc-900/60 border-t border-white/10 text-xs text-zinc-400 flex items-center justify-between w-full">
-            <span>© {new Date().getFullYear()} {appName}</span>
-            <span className="hidden sm:block">Feito com React Router + Tailwind</span>
+            <span>
+              © {new Date().getFullYear()} {appName}
+            </span>
+            <span className="hidden sm:block">
+              Feito com React Router + Tailwind
+            </span>
           </div>
         </section>
       </div>

@@ -1,11 +1,10 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import "./login.css";
 
 export default function LoginPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-800 flex items-center justify-center text-zinc-100 p-6 relative">
-  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[33.75rem] h-[29.7rem] bg-emerald-500 rounded-xl opacity-80 z-0"></div>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[33.75rem] h-[29.7rem] bg-emerald-500 rounded-xl opacity-80 z-0"></div>
       <div className="w-full max-w-md rounded-3xl bg-zinc-900/70 border border-white/10 shadow-2xl p-8 relative z-10">
         <h1 className="text-3xl font-bold text-center">Login</h1>
         <p className="mt-2 text-center text-zinc-400">
