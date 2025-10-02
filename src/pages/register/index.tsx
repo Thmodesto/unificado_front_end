@@ -1,7 +1,9 @@
+// Página de Registro: formulário estilizado com Tailwind e moldura verde.
 import { Link } from "react-router-dom";
 
 export default function RegisterPage() {
   return (
+    // Wrapper da página com gradiente e centralização do card de registro
     <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-800 flex items-center justify-center text-zinc-100 p-4 sm:p-6 relative">
       <div className="w-full max-w-md rounded-lg bg-[#111111] border-2 border-[#00ff88] shadow-2xl p-6 sm:p-10 relative z-10 text-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#00ff88] mb-4 sm:mb-5">Criar Conta</h1>

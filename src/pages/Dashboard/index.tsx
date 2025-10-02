@@ -1,3 +1,5 @@
+// Dashboard: contém top bar, sidebar com seções (Resumo, Requeridas, Configurações),
+// abas de matérias com busca e progresso, e componentes responsivos.
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
@@ -8,7 +10,7 @@ export default function DashboardPage() {
   const [requiredSearch, setRequiredSearch] = useState("");
   const [profile, setProfile] = useState<{ nome: string; email: string; curso: string }>({ nome: "", email: "", curso: "" });
 
-  // Load profile from localStorage on mount
+  // Carrega o perfil do localStorage ao montar o componente
   useEffect(() => {
     try {
       const saved = localStorage.getItem("profile");
@@ -94,7 +96,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 sm:gap-6">
-        {/* Sidebar */}
+  {/* Sidebar */}
         <aside className="hidden lg:block rounded-2xl bg-zinc-900/60 border border-white/10 p-4 h-fit">
           <p className="text-xs uppercase tracking-wide text-zinc-400 mb-3">Menu</p>
           <ul className="space-y-1 text-sm">
