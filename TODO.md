@@ -1,0 +1,4 @@
+- [x] Agrupar as matérias por status usando reduce
+- [x] Modificar o JSX para renderizar acordeões aninhados: externo para status, interno para matérias
+- [x] Remover a linha de ordenação das matérias
+- [ ] Testar a exibição executando o servidor de desenvolvimento
