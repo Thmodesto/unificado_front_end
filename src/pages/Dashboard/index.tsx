@@ -1,9 +1,21 @@
+import { useEffect, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { getStudent, getDisciplines } from "@/lib/api";
 
 interface Student {
+  id: number;
+  username: string;
+  email?: string;
+  is_active: boolean;
+  ra_number?: string;
+  disciplines: Discipline[];
+}
+
+interface Discipline {
+  id: number;
   name: string;
-  course: string;
-  ra: string;
+  course_id: number;
+  prerequisites: number[];
 }
 
 interface Subject {
@@ -13,39 +25,75 @@ interface Subject {
 }
 
 export default function Dashboard() {
-  const student: Student = {
-    name: 'João Silva',
-    course: 'Engenharia da Computação',
-    ra: '1234567',
+  const [student, setStudent] = useState<Student | null>(null);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Obter ID do estudante do localStorage
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const studentId = user.id || 1; // fallback para demonstração
+        const [studentData, disciplinesData] = await Promise.all([
+          getStudent(studentId),
+          getDisciplines()
+        ]);
+        setStudent(studentData);
+        setDisciplines(disciplinesData);
+      } catch (err) {
+        setError('Erro ao carregar dados');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
+        <header className="bg-[#2D2785] text-white p-4 shadow-md">
+          <h1 className="text-2xl font-bold text-center">Painel Acadêmico - BioGraph</h1>
+        </header>
+        <main className="flex-1 flex justify-center items-center">
+          <p>Carregando...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
+        <header className="bg-[#2D2785] text-white p-4 shadow-md">
+          <h1 className="text-2xl font-bold text-center">Painel Acadêmico - BioGraph</h1>
+        </header>
+        <main className="flex-1 flex justify-center items-center">
+          <p>{error || 'Estudante não encontrado'}</p>
+        </main>
+      </div>
+    );
+  }
+
+  // Simular status das disciplinas baseado em dados mockados (já que a API não tem status)
+  const getMockStatus = (discipline: Discipline): string => {
+    // Simulação simples: algumas concluídas, algumas em andamento, outras pendentes
+    const statuses = ['Concluída', 'Em Andamento', 'Pendente'];
+    return statuses[discipline.id % 3];
   };
 
-  const subjects: Subject[] = [
-    {
-      name: 'Cálculo 1',
-      status: 'Concluída',
-      dependencies: [],
-    },
-    {
-      name: 'Cálculo 2',
-      status: 'Pendente',
-      dependencies: ['Cálculo 1', 'Fundamentos de Matemática'],
-    },
-    {
-      name: 'Álgebra Linear',
-      status: 'Pendente',
-      dependencies: ['Fundamentos de Matemática'],
-    },
-    {
-      name: 'Estruturas de Dados',
-      status: 'Em Andamento',
-      dependencies: ['Lógica de Programação'],
-    },
-    {
-      name: 'Teoria dos Grafos',
-      status: 'Pendente',
-      dependencies: ['Álgebra Linear', 'Estruturas de Dados'],
-    },
-  ];
+  const subjects: Subject[] = student.disciplines.map(discipline => ({
+    name: discipline.name,
+    status: getMockStatus(discipline),
+    dependencies: discipline.prerequisites.map(depId => {
+      const depDiscipline = disciplines.find(d => d.id === depId);
+      return depDiscipline ? depDiscipline.name : 'Disciplina não encontrada';
+    }),
+  }));
 
   // Agrupar as matérias por status
   const statusOrder = ['Em Andamento', 'Pendente', 'Concluída'];
@@ -79,9 +127,9 @@ export default function Dashboard() {
       <section className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h2 className="text-xl font-semibold text-[#2D2785]">Nome: {student.name}</h2>
-            <p className="text-gray-700">Curso: {student.course}</p>
-            <p className="text-gray-500">RA: {student.ra}</p>
+            <h2 className="text-xl font-semibold text-[#2D2785]">Nome: {student.username}</h2>
+            <p className="text-gray-700">Curso: ID {student.disciplines[0]?.course_id || 'Não informado'}</p>
+            <p className="text-gray-500">RA: {student.ra_number || 'Não informado'}</p>
           </div>
           <div className="mt-4 md:mt-0 bg-[#FFDD00] text-[#2D2785] px-4 py-2 rounded-full font-semibold shadow">
             Status Acadêmico

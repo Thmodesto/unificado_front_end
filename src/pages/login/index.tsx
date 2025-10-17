@@ -1,22 +1,45 @@
-// Página de Login: controla e valida o formulário e redireciona para o Dashboard.
 import { Link, useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
+import { login } from "@/lib/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Envia o formulário: valida campos simples e navega para /dashboard
-  const onSubmit = (e: FormEvent) => {
+  // Envia o formulário: valida campos simples e navega para o dashboard apropriado
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Preencha e-mail e senha.");
+    if (!identifier || !password) {
+      setError("Preencha identificador e senha.");
       return;
     }
     setError(null);
-    navigate("/dashboard");
+    setLoading(true);
+
+    try {
+      const response = await login({ identifier, password });
+
+      // Armazenar token e dados do usuário (pode usar localStorage ou context)
+      localStorage.setItem('token', response.access_token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      // Redirecionar baseado no role
+      if (response.user.role === 'student') {
+        navigate("/dashboard");
+      } else if (response.user.role === 'teacher') {
+        navigate("/professor-dashboard");
+      } else {
+        navigate("/dashboard"); // fallback
+      }
+    } catch (err) {
+      setError("Credenciais inválidas ou erro na autenticação.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,11 +61,11 @@ export default function LoginPage() {
 
             <form className="space-y-4" onSubmit={onSubmit}>
               <input
-                type="email"
-                placeholder="E-mail"
+                type="text"
+                placeholder="E-mail, Username, RA ou ID Funcionário"
                 className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
               <input
                 type="password"
@@ -54,9 +77,10 @@ export default function LoginPage() {
               {error && <p className="text-red-600 text-sm text-left">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-md px-4 py-3 font-bold bg-[#2D2785] hover:bg-[#1a1a5a] text-white shadow transition"
+                disabled={loading}
+                className="w-full rounded-md px-4 py-3 font-bold bg-[#2D2785] hover:bg-[#1a1a5a] text-white shadow transition disabled:opacity-50"
               >
-                Entrar
+                {loading ? "Entrando..." : "Entrar"}
               </button>
             </form>
 

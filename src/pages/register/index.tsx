@@ -1,7 +1,65 @@
-// Página de Registro: formulário estilizado com Tailwind e moldura verde.
-import { Link } from "react-router-dom";
+// Página de Registro: formulário estilizado com Tailwind e integração com API.
+import { Link, useNavigate } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { createStudent, createTeacher } from "@/lib/api";
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "student",
+    ra_number: "",
+    employee_number: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRoleChange = (role: string) => {
+    setFormData(prev => ({ ...prev, role }));
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      setError("Preencha nome de usuário e senha.");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (formData.role === 'student') {
+        await createStudent({
+          username: formData.username,
+          email: formData.email || undefined,
+          password: formData.password,
+          ra_number: formData.ra_number || undefined,
+        });
+      } else {
+        await createTeacher({
+          username: formData.username,
+          email: formData.email || undefined,
+          password: formData.password,
+          employee_number: formData.employee_number || undefined,
+        });
+      }
+      // Redirecionar para login após registro bem-sucedido
+      navigate("/login");
+    } catch (err) {
+      setError("Erro ao criar conta. Verifique os dados e tente novamente.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
       {/* Header */}
@@ -19,48 +77,82 @@ export default function RegisterPage() {
               Preencha os dados abaixo para se registrar
             </p>
 
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={onSubmit}>
               <input
                 type="text"
-                placeholder="Nome completo"
+                name="username"
+                placeholder="Nome de usuário"
                 className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
-              />
-              <input
-                type="number"
-                placeholder="Idade"
-                min="0"
-                className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Curso"
-                className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
+                value={formData.username}
+                onChange={handleInputChange}
               />
               <input
                 type="email"
-                placeholder="E-mail"
+                name="email"
+                placeholder="E-mail (opcional)"
                 className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
+                value={formData.email}
+                onChange={handleInputChange}
               />
               <input
                 type="password"
+                name="password"
                 placeholder="Senha"
                 className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
+                value={formData.password}
+                onChange={handleInputChange}
               />
+              {formData.role === 'student' && (
+                <input
+                  type="text"
+                  name="ra_number"
+                  placeholder="RA (Registro Acadêmico - opcional)"
+                  className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
+                  value={formData.ra_number}
+                  onChange={handleInputChange}
+                />
+              )}
+              {formData.role === 'teacher' && (
+                <input
+                  type="text"
+                  name="employee_number"
+                  placeholder="ID de Funcionário (opcional)"
+                  className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
+                  value={formData.employee_number}
+                  onChange={handleInputChange}
+                />
+              )}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm sm:text-base">
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="role" value="student" className="accent-[#2D2785]" defaultChecked />
+                  <input
+                    type="radio"
+                    name="role"
+                    value="student"
+                    checked={formData.role === 'student'}
+                    onChange={() => handleRoleChange('student')}
+                    className="accent-[#2D2785]"
+                  />
                   <span>Sou estudante</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="role" value="teacher" className="accent-[#2D2785]" />
+                  <input
+                    type="radio"
+                    name="role"
+                    value="teacher"
+                    checked={formData.role === 'teacher'}
+                    onChange={() => handleRoleChange('teacher')}
+                    className="accent-[#2D2785]"
+                  />
                   <span>Sou professor(a)</span>
                 </label>
               </div>
+              {error && <p className="text-red-600 text-sm text-left">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-md px-4 py-3 font-bold bg-[#2D2785] hover:bg-[#1a1a5a] text-white shadow transition"
+                disabled={loading}
+                className="w-full rounded-md px-4 py-3 font-bold bg-[#2D2785] hover:bg-[#1a1a5a] text-white shadow transition disabled:opacity-50"
               >
-                Registrar
+                {loading ? "Registrando..." : "Registrar"}
               </button>
             </form>
 
