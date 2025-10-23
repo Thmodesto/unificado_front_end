@@ -12,6 +12,7 @@ import LoginPage from "@/pages/login/index.tsx";
 import RegisterPage from "@/pages/register/index.tsx";
 import DashboardPage from "@/pages/Dashboard/index.tsx";
 import ProfessorDashboardPage from "@/pages/ProfessorDashboard/index.tsx";
+import AdminDashboardPage from "@/pages/AdminDashboard/index.tsx";
 
 // Busca o elemento root no HTML (index.html)
 const rootElement = document.getElementById("root");
@@ -34,6 +35,8 @@ if (rootElement) {
           <Route path="/dashboard" element={<DashboardPage />} />
           {/* Rota do Dashboard do Professor */}
           <Route path="/professor-dashboard" element={<ProfessorDashboardPage />} />
+          {/* Rota do Dashboard do Admin */}
+          <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
         </Routes>
       </BrowserRouter>
     </React.StrictMode>

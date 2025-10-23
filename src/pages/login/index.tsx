@@ -31,6 +31,8 @@ export default function LoginPage() {
         navigate("/dashboard");
       } else if (response.user.role === 'teacher') {
         navigate("/professor-dashboard");
+      } else if (response.user.role === 'admin') {
+        navigate("/admin-dashboard");
       } else {
         navigate("/dashboard"); // fallback
       }
