@@ -85,6 +85,7 @@ export interface StudentUpdateRequest {
   username?: string;
   email?: string;
   ra_number?: string;
+  is_active?: boolean;
 }
 
 export interface TeacherCreateRequest {

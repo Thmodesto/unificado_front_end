@@ -1,73 +1,145 @@
-# React + TypeScript + Vite
+# Unificado Front-End
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este é o front-end do projeto Unificado, desenvolvido com React, TypeScript e Vite. Ele fornece uma interface de usuário para gerenciar cursos, disciplinas, professores e alunos, integrando-se com uma API backend desenvolvida em FastAPI.
 
-Currently, two official plugins are available:
+## Pré-requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Antes de começar, certifique-se de que você tenha os seguintes softwares instalados em sua máquina:
 
-## React Compiler
+- **Node.js** (versão 18 ou superior): Você pode baixar e instalar a partir do site oficial [nodejs.org](https://nodejs.org/).
+- **npm** (geralmente vem com o Node.js): Verifique a instalação executando `npm --version` no terminal.
+- **Git**: Para clonar repositórios. Baixe em [git-scm.com](https://git-scm.com/).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Dependências do Projeto
 
-## Expanding the ESLint configuration
+O projeto utiliza as seguintes dependências principais, listadas no arquivo `package.json`:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Dependências de Produção
+- `@radix-ui/react-accordion`: ^1.2.12 - Componente de acordeão para UI.
+- `@radix-ui/react-checkbox`: ^1.3.3 - Componente de checkbox.
+- `@radix-ui/react-dialog`: ^1.1.15 - Componente de diálogo modal.
+- `@radix-ui/react-popover`: ^1.1.15 - Componente de popover.
+- `@radix-ui/react-select`: ^2.2.6 - Componente de seleção.
+- `@radix-ui/react-separator`: ^1.1.7 - Componente separador.
+- `@radix-ui/react-slot`: ^1.2.3 - Utilitário para slots em componentes.
+- `@radix-ui/react-tabs`: ^1.1.13 - Componente de abas.
+- `@radix-ui/react-tooltip`: ^1.2.8 - Componente de tooltip.
+- `@tailwindcss/vite`: ^4.1.13 - Plugin Vite para Tailwind CSS.
+- `class-variance-authority`: ^0.7.1 - Utilitário para variantes de classes CSS.
+- `clsx`: ^2.1.1 - Utilitário para combinar classes CSS condicionalmente.
+- `lucide-react`: ^0.544.0 - Ícones React baseados em Lucide.
+- `react`: ^19.1.1 - Biblioteca React.
+- `react-dom`: ^19.1.1 - Renderização DOM para React.
+- `react-router-dom`: ^7.9.2 - Roteamento para aplicações React.
+- `tailwind-merge`: ^3.3.1 - Utilitário para mesclar classes Tailwind.
+- `tailwindcss`: ^4.1.13 - Framework CSS utilitário.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Dependências de Desenvolvimento
+- `@eslint/js`: ^9.36.0 - Configuração ESLint.
+- `@types/node`: ^24.5.2 - Tipos TypeScript para Node.js.
+- `@types/react`: ^19.1.13 - Tipos TypeScript para React.
+- `@types/react-dom`: ^19.1.9 - Tipos TypeScript para React DOM.
+- `@vitejs/plugin-react`: ^5.0.3 - Plugin Vite para React.
+- `eslint`: ^9.36.0 - Linter JavaScript/TypeScript.
+- `eslint-plugin-react-hooks`: ^5.2.0 - Regras ESLint para hooks React.
+- `eslint-plugin-react-refresh`: ^0.4.20 - Plugin para React Fast Refresh.
+- `globals`: ^16.4.0 - Definições globais para ESLint.
+- `tw-animate-css`: ^1.4.0 - Animações CSS para Tailwind.
+- `typescript`: ~5.8.3 - Superset JavaScript com tipagem.
+- `typescript-eslint`: ^8.44.0 - Regras ESLint para TypeScript.
+- `vite`: ^7.1.7 - Ferramenta de build rápida.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Instalação
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Siga os passos abaixo para configurar o projeto localmente:
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone o repositório**:
+   ```bash
+   git clone https://github.com/Gabriel-Ramon-R-Ramos/unificado.git
+   cd unificado/front/unificado_front_end
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Instale as dependências**:
+   Execute o comando abaixo para instalar todas as dependências listadas no `package.json`:
+   ```bash
+   npm install
+   ```
+   Este comando baixará e instalará todas as bibliotecas necessárias no diretório `node_modules`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3. **Configure as variáveis de ambiente**:
+   Crie um arquivo `.env` na raiz do projeto (ou copie de `.env.example` se existir) e defina a URL da API backend:
+   ```
+   VITE_API_BASE_URL=http://127.0.0.1:8000
+   ```
+   - Substitua `http://127.0.0.1:8000` pela URL do seu servidor backend se estiver rodando em outro endereço/porta.
+
+## Dependência da API Backend
+
+Este front-end depende da API backend desenvolvida em FastAPI, disponível no repositório: [https://github.com/Gabriel-Ramon-R-Ramos/unificado](https://github.com/Gabriel-Ramon-R-Ramos/unificado).
+
+### Como configurar a API backend:
+1. Clone o repositório da API:
+   ```bash
+   git clone https://github.com/Gabriel-Ramon-R-Ramos/unificado.git
+   cd unificado  # Ajuste para o diretório correto da API, provavelmente 'back' ou similar
+   ```
+
+2. Siga as instruções no README da API para instalar dependências.
+
+3. Certifique-se de que a API esteja rodando na porta 8000 (ou ajuste a variável `VITE_API_BASE_URL` conforme necessário).
+
+## Executando o Projeto
+
+Após a instalação e configuração:
+
+1. **Inicie o servidor de desenvolvimento**:
+   ```bash
+   npm run dev
+   ```
+   Isso iniciará o Vite em modo de desenvolvimento. Abra o navegador e acesse `http://localhost:5173` (porta padrão do Vite).
+
+2. **Build para produção**:
+   ```bash
+   npm run build
+   ```
+   Isso criará uma versão otimizada em `dist/`.
+
+3. **Preview da build**:
+   ```bash
+   npm run preview
+   ```
+
+4. **Linting**:
+   ```bash
+   npm run lint
+   ```
+   Para verificar e corrigir problemas de código.
+
+## Estrutura do Projeto
+
+- `src/`: Código fonte principal.
+  - `components/`: Componentes reutilizáveis (UI com Radix e Tailwind).
+  - `pages/`: Páginas da aplicação (Login, Dashboard, etc.).
+  - `lib/`: Utilitários, incluindo `api.ts` para chamadas à API.
+  - `hooks/`: Hooks customizados.
+- `public/`: Assets estáticos.
+- `vite.config.ts`: Configuração do Vite.
+- `tsconfig.json`: Configuração TypeScript.
+
+## Contribuição
+
+Para contribuir:
+1. Faça um fork do repositório.
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`).
+3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`).
+4. Push para a branch (`git push origin feature/nova-feature`).
+5. Abra um Pull Request.
+
+## Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## Suporte
+
+Se encontrar problemas, abra uma issue no repositório ou entre em contato com a equipe de desenvolvimento.
 ```
