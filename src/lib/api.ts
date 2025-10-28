@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export interface Course {
   id: number;
@@ -8,7 +8,7 @@ export interface Course {
 export interface Discipline {
   id: number;
   name: string;
-  course_id: number;
+  course_ids: number[];
   prerequisites: number[];
 }
 
@@ -47,7 +47,7 @@ export interface UserListResponse {
 }
 
 export interface LoginRequest {
-  identifier: string;
+  username: string;
   password: string;
 }
 
@@ -69,7 +69,7 @@ export interface CourseCreateRequest {
 
 export interface DisciplineCreateRequest {
   name: string;
-  course_id: number;
+  course_ids?: number[];
   prerequisites?: number[];
 }
 
@@ -174,12 +174,16 @@ export async function updateDiscipline(id: number, disciplineData: DisciplineCre
 }
 
 export async function login(loginData: LoginRequest): Promise<LoginResponse> {
+  const formData = new URLSearchParams();
+  formData.append('username', loginData.username);
+  formData.append('password', loginData.password);
+
   const response = await fetch(`${API_BASE}/api/v1/login`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: JSON.stringify(loginData),
+    body: formData.toString(),
   });
   if (!response.ok) {
     throw new Error('Failed to login');

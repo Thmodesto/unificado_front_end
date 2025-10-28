@@ -4,7 +4,7 @@ import { login } from "@/lib/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -12,15 +12,15 @@ export default function LoginPage() {
   // Envia o formulário: valida campos simples e navega para o dashboard apropriado
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!identifier || !password) {
-      setError("Preencha identificador e senha.");
+    if (!username || !password) {
+      setError("Preencha username e senha.");
       return;
     }
     setError(null);
     setLoading(true);
 
     try {
-      const response = await login({ identifier, password });
+      const response = await login({ username, password });
 
       // Armazenar token e dados do usuário (pode usar localStorage ou context)
       localStorage.setItem('token', response.access_token);
@@ -64,10 +64,10 @@ export default function LoginPage() {
             <form className="space-y-4" onSubmit={onSubmit}>
               <input
                 type="text"
-                placeholder="E-mail, Username, RA ou ID Funcionário"
+                placeholder="Username"
                 className="w-full rounded-md px-4 py-3 bg-white text-gray-900 border border-gray-300 focus:ring-2 focus:ring-[#2D2785] outline-none"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
               />
               <input
                 type="password"

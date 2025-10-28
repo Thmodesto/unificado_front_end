@@ -49,12 +49,12 @@ export default function AdminDashboard() {
 
   // State for forms
   const [newCourseName, setNewCourseName] = useState("");
-  const [newDiscipline, setNewDiscipline] = useState({ name: "", course_id: 0, prerequisites: [] as number[] });
+  const [newDiscipline, setNewDiscipline] = useState({ name: "", course_ids: [] as number[], prerequisites: [] as number[] });
   const [newStudent, setNewStudent] = useState<StudentCreateRequest>({ username: "", password: "" });
   const [newTeacher, setNewTeacher] = useState<TeacherCreateRequest>({ username: "", password: "" });
   const [editingStudent, setEditingStudent] = useState<StudentUpdateRequest>({});
   const [editingTeacher, setEditingTeacher] = useState<TeacherUpdateRequest>({});
-  const [editingDiscipline, setEditingDiscipline] = useState<{ id: number; name: string; course_id: number; prerequisites: number[] } | null>(null);
+  const [editingDiscipline, setEditingDiscipline] = useState<{ id: number; name: string; course_ids: number[]; prerequisites: number[] } | null>(null);
 
   // State for UI
   const [loading, setLoading] = useState(true);
@@ -116,10 +116,10 @@ export default function AdminDashboard() {
   };
 
   const handleCreateDiscipline = async () => {
-    if (!newDiscipline.name.trim() || !newDiscipline.course_id) return;
+    if (!newDiscipline.name.trim() || newDiscipline.course_ids.length === 0) return;
     try {
       await createDiscipline(newDiscipline);
-      setNewDiscipline({ name: "", course_id: 0, prerequisites: [] });
+      setNewDiscipline({ name: "", course_ids: [], prerequisites: [] });
       fetchAllData();
     } catch (err) {
       console.error('Erro ao criar disciplina:', err);
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
     try {
       await updateDiscipline(disciplineId, {
         name: editingDiscipline.name,
-        course_id: editingDiscipline.course_id,
+        course_ids: editingDiscipline.course_ids,
         prerequisites: editingDiscipline.prerequisites,
       });
       setEditingDiscipline(null);
@@ -393,31 +393,38 @@ export default function AdminDashboard() {
                       onChange={(e) => setNewDiscipline({...newDiscipline, name: e.target.value})}
                     />
 
-                    <Select
-
-                      value={newDiscipline.course_id === 0 ? "" : newDiscipline.course_id.toString()}
-
-                      onValueChange={(value) => setNewDiscipline({...newDiscipline, course_id: value === "" ? 0 : Number(value)})}
-
-                    >
-
-                      <SelectTrigger className="border border-gray-300 rounded px-3 py-2">
-
-                        <SelectValue placeholder="Selecione um curso" />
-
-                      </SelectTrigger>
-
-                      <SelectContent>
-
-                        {courses.map((course) => (
-
-                          <SelectItem key={course.id} value={course.id.toString()}>{course.name}</SelectItem>
-
-                        ))}
-
-                      </SelectContent>
-
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                          {newDiscipline.course_ids.length > 0
+                            ? newDiscipline.course_ids.map(id => courses.find(c => c.id === id)?.name).join(', ')
+                            : "Selecione cursos"
+                          }
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          {courses.map((course) => (
+                            <div key={course.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`course-${course.id}`}
+                                checked={newDiscipline.course_ids.includes(course.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setNewDiscipline({...newDiscipline, course_ids: [...newDiscipline.course_ids, course.id]});
+                                  } else {
+                                    setNewDiscipline({...newDiscipline, course_ids: newDiscipline.course_ids.filter(id => id !== course.id)});
+                                  }
+                                }}
+                              />
+                              <label htmlFor={`course-${course.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {course.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
 
                     <Popover>
                       <PopoverTrigger asChild>
@@ -471,7 +478,7 @@ export default function AdminDashboard() {
                             <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
                             <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
                             <td className="border border-gray-300 px-4 py-2">
-                              {courses.find(c => c.id === discipline.course_id)?.name || 'N/A'}
+                              {discipline.course_ids.map(id => courses.find(c => c.id === id)?.name).filter(Boolean).join(', ') || 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-4 py-2">
                               {discipline.prerequisites.length > 0
@@ -505,31 +512,38 @@ export default function AdminDashboard() {
                           onChange={(e) => setEditingDiscipline({...editingDiscipline, name: e.target.value})}
                         />
 
-                        <Select
-
-                          value={editingDiscipline.course_id === 0 ? "" : editingDiscipline.course_id.toString()}
-
-                          onValueChange={(value) => setEditingDiscipline({...editingDiscipline, course_id: value === "" ? 0 : Number(value)})}
-
-                        >
-
-                          <SelectTrigger className="border border-gray-300 rounded px-3 py-2">
-
-                            <SelectValue placeholder="Selecione um curso" />
-
-                          </SelectTrigger>
-
-                          <SelectContent>
-
-                            {courses.map((course) => (
-
-                              <SelectItem key={course.id} value={course.id.toString()}>{course.name}</SelectItem>
-
-                            ))}
-
-                          </SelectContent>
-
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                              {editingDiscipline.course_ids.length > 0
+                                ? editingDiscipline.course_ids.map(id => courses.find(c => c.id === id)?.name).join(', ')
+                                : "Selecione cursos"
+                              }
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80">
+                            <div className="space-y-2">
+                              {courses.map((course) => (
+                                <div key={course.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`edit-course-${course.id}`}
+                                    checked={editingDiscipline.course_ids.includes(course.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setEditingDiscipline({...editingDiscipline, course_ids: [...editingDiscipline.course_ids, course.id]});
+                                      } else {
+                                        setEditingDiscipline({...editingDiscipline, course_ids: editingDiscipline.course_ids.filter(id => id !== course.id)});
+                                      }
+                                    }}
+                                  />
+                                  <label htmlFor={`edit-course-${course.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    {course.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
 
                         <Popover>
                           <PopoverTrigger asChild>
