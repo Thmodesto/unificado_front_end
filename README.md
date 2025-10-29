@@ -53,13 +53,7 @@ O projeto utiliza as seguintes dependências principais, listadas no arquivo `pa
 
 Siga os passos abaixo para configurar o projeto localmente:
 
-1. **Clone o repositório**:
-   ```bash
-   git clone https://github.com/Gabriel-Ramon-R-Ramos/unificado.git
-   cd unificado/front/unificado_front_end
-   ```
-
-2. **Instale as dependências**:
+1. **Instale as dependências**:
    Execute o comando abaixo para instalar todas as dependências listadas no `package.json`:
    ```bash
    npm install
