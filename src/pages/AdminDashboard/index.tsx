@@ -62,12 +62,18 @@ export default function AdminDashboard() {
   const [showInactive, setShowInactive] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState<number | null>(null);
+  const [selectedStudentForDisciplines, setSelectedStudentForDisciplines] = useState<number | null>(null);
+  const [selectedTeacherForDisciplines, setSelectedTeacherForDisciplines] = useState<number | null>(null);
 
   const [disciplineToAdd, setDisciplineToAdd] = useState<number>(0);
 
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
 
   const [selectedAddDisciplineTeacher, setSelectedAddDisciplineTeacher] = useState<Record<number, string>>({});
+
+  const [selectedRemoveDisciplineStudent, setSelectedRemoveDisciplineStudent] = useState<Record<number, string>>({});
+
+  const [selectedRemoveDisciplineTeacher, setSelectedRemoveDisciplineTeacher] = useState<Record<number, string>>({});
 
 
   useEffect(() => {
@@ -282,12 +288,12 @@ export default function AdminDashboard() {
       <main className="flex-1 p-6">
         <div className="max-w-6xl mx-auto">
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="users">Usuários</TabsTrigger>
-              <TabsTrigger value="courses">Cursos</TabsTrigger>
-              <TabsTrigger value="disciplines">Disciplinas</TabsTrigger>
-              <TabsTrigger value="students">Estudantes</TabsTrigger>
-              <TabsTrigger value="teachers">Professores</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 bg-gray-100 border border-gray-300 rounded-lg p-1">
+              <TabsTrigger value="users" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Usuários</TabsTrigger>
+              <TabsTrigger value="courses" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Cursos</TabsTrigger>
+              <TabsTrigger value="disciplines" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Disciplinas</TabsTrigger>
+              <TabsTrigger value="students" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Estudantes</TabsTrigger>
+              <TabsTrigger value="teachers" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Professores</TabsTrigger>
             </TabsList>
 
             {/* Gerenciar Usuários */}
@@ -620,7 +626,6 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">Email</th>
                         <th className="border border-gray-300 px-4 py-2">RA</th>
                         <th className="border border-gray-300 px-4 py-2">Status</th>
-                        <th className="border border-gray-300 px-4 py-2">Disciplinas</th>
                         <th className="border border-gray-300 px-4 py-2">Ações</th>
                       </tr>
                     </thead>
@@ -635,23 +640,6 @@ export default function AdminDashboard() {
                             <span className={student.is_active ? 'text-green-600' : 'text-red-600'}>
                               {student.is_active ? 'Ativo' : 'Inativo'}
                             </span>
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {student.disciplines.length > 0
-                              ? student.disciplines.map(d => (
-                                  <span key={d.id} className="inline-flex items-center gap-1 mr-2 mb-1">
-                                    {d.name}
-                                    <button
-                                      onClick={() => handleRemoveDisciplineFromStudent(student.id, d.id)}
-                                      className="text-red-500 hover:text-red-700 text-xs"
-                                      title="Remover disciplina"
-                                    >
-                                      ×
-                                    </button>
-                                  </span>
-                                ))
-                              : 'Nenhuma'
-                            }
                           </td>
                           <td className="border border-gray-300 px-4 py-2">
                             <div className="flex gap-1 flex-wrap">
@@ -669,29 +657,15 @@ export default function AdminDashboard() {
                               >
                                 Editar
                               </Button>
-
-                              <Select
-                                value={selectedAddDisciplineStudent[student.id] || ""}
-                                onValueChange={(value) => {
-                                  if (value) {
-                                    handleAddDisciplineToStudent(student.id, Number(value));
-                                    setSelectedAddDisciplineStudent(prev => ({ ...prev, [student.id]: "" }));
-                                  }
+                              <Button
+                                onClick={() => {
+                                  setSelectedStudentForDisciplines(selectedStudentForDisciplines === student.id ? null : student.id);
                                 }}
+                                variant="outline"
+                                size="sm"
                               >
-                                <SelectTrigger className="border border-gray-200 rounded px-2 py-1 text-sm w-fit">
-                                  <SelectValue placeholder="+ Disciplina" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {disciplines
-                                    .filter(d => !student.disciplines.some(sd => sd.id === d.id))
-                                    .map(d => (
-                                      <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
-
+                                Gerenciar Disciplinas
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -736,6 +710,67 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
+                {selectedStudentForDisciplines && (
+                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Estudante</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h5 className="font-medium">Disciplinas Atuais:</h5>
+                        {students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.length ? (
+                          <ul className="space-y-1">
+                            {students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.map((discipline) => (
+                              <li key={discipline.id} className="flex justify-between items-center p-2 border rounded">
+                                <span>{discipline.name}</span>
+                                <Button
+                                  onClick={() => handleRemoveDisciplineFromStudent(selectedStudentForDisciplines, discipline.id)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Remover
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Select
+                          value={selectedAddDisciplineStudent[selectedStudentForDisciplines] || ""}
+                          onValueChange={(value) => setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: value})}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {disciplines
+                              .filter(d => !students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.some(sd => sd.id === d.id))
+                              .map((discipline) => (
+                                <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                  {discipline.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={() => {
+                            const disciplineId = parseInt(selectedAddDisciplineStudent[selectedStudentForDisciplines]);
+                            if (disciplineId) {
+                              handleAddDisciplineToStudent(selectedStudentForDisciplines, disciplineId);
+                              setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: ""});
+                            }
+                          }}
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button variant="outline" onClick={() => setSelectedStudentForDisciplines(null)}>Fechar</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -776,7 +811,6 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">Email</th>
                         <th className="border border-gray-300 px-4 py-2">Funcionário</th>
                         <th className="border border-gray-300 px-4 py-2">Status</th>
-                        <th className="border border-gray-300 px-4 py-2">Disciplinas</th>
                         <th className="border border-gray-300 px-4 py-2">Ações</th>
                       </tr>
                     </thead>
@@ -791,23 +825,6 @@ export default function AdminDashboard() {
                             <span className={teacher.is_active ? 'text-green-600' : 'text-red-600'}>
                               {teacher.is_active ? 'Ativo' : 'Inativo'}
                             </span>
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {teacher.disciplines.length > 0
-                              ? teacher.disciplines.map(d => (
-                                  <span key={d.id} className="inline-flex items-center gap-1 mr-2 mb-1">
-                                    {d.name}
-                                    <button
-                                      onClick={() => handleRemoveDisciplineFromTeacher(teacher.id, d.id)}
-                                      className="text-red-500 hover:text-red-700 text-xs"
-                                      title="Remover disciplina"
-                                    >
-                                      ×
-                                    </button>
-                                  </span>
-                                ))
-                              : 'Nenhuma'
-                            }
                           </td>
                           <td className="border border-gray-300 px-4 py-2">
                             <div className="flex gap-1 flex-wrap">
@@ -826,27 +843,15 @@ export default function AdminDashboard() {
                               >
                                 Editar
                               </Button>
-                              <Select
-                                value={selectedAddDisciplineTeacher[teacher.id] || ""}
-                                onValueChange={(value) => {
-                                  if (value) {
-                                    handleAddDisciplineToTeacher(teacher.id, Number(value));
-                                    setSelectedAddDisciplineTeacher(prev => ({ ...prev, [teacher.id]: "" }));
-                                  }
+                              <Button
+                                onClick={() => {
+                                  setSelectedTeacherForDisciplines(selectedTeacherForDisciplines === teacher.id ? null : teacher.id);
                                 }}
+                                variant="outline"
+                                size="sm"
                               >
-                                <SelectTrigger className="border border-gray-200 rounded px-2 py-1 text-sm w-fit">
-                                  <SelectValue placeholder="+ Disciplina" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {disciplines
-                                    .filter(d => !teacher.disciplines.some(td => td.id === d.id))
-                                    .map(d => (
-                                      <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
+                                Gerenciar Disciplinas
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -888,6 +893,67 @@ export default function AdminDashboard() {
                     <div className="flex gap-2 mt-2">
                       <Button onClick={() => handleUpdateTeacher(selectedTeacherId)}>Salvar</Button>
                       <Button variant="outline" onClick={() => { setSelectedTeacherId(null); setEditingTeacher({}); }}>Cancelar</Button>
+                    </div>
+                  </div>
+                )}
+                {selectedTeacherForDisciplines && (
+                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Professor</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h5 className="font-medium">Disciplinas Atuais:</h5>
+                        {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.length ? (
+                          <ul className="space-y-1">
+                            {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.map((discipline) => (
+                              <li key={discipline.id} className="flex justify-between items-center p-2 border rounded">
+                                <span>{discipline.name}</span>
+                                <Button
+                                  onClick={() => handleRemoveDisciplineFromTeacher(selectedTeacherForDisciplines, discipline.id)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Remover
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Select
+                          value={selectedAddDisciplineTeacher[selectedTeacherForDisciplines] || ""}
+                          onValueChange={(value) => setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: value})}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {disciplines
+                              .filter(d => !teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.some(td => td.id === d.id))
+                              .map((discipline) => (
+                                <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                  {discipline.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={() => {
+                            const disciplineId = parseInt(selectedAddDisciplineTeacher[selectedTeacherForDisciplines]);
+                            if (disciplineId) {
+                              handleAddDisciplineToTeacher(selectedTeacherForDisciplines, disciplineId);
+                              setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: ""});
+                            }
+                          }}
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button variant="outline" onClick={() => setSelectedTeacherForDisciplines(null)}>Fechar</Button>
                     </div>
                   </div>
                 )}
