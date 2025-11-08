@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = import.meta.env.DEV ? '' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
 
 export interface Course {
   id: number;
@@ -160,7 +160,7 @@ export async function createDiscipline(disciplineData: DisciplineCreateRequest):
 }
 
 export async function updateDiscipline(id: number, disciplineData: DisciplineCreateRequest): Promise<Discipline> {
-  const response = await fetch(`${API_BASE}/api/v1/disciplines/${id}`, {
+  const response = await fetch(`${API_BASE}/api/v1/disciplines/${id}/`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export async function login(loginData: LoginRequest): Promise<LoginResponse> {
   formData.append('username', loginData.username);
   formData.append('password', loginData.password);
 
-  const response = await fetch(`${API_BASE}/api/v1/login`, {
+  const response = await fetch(`${API_BASE}/api/v1/login/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -324,7 +324,7 @@ export async function removeDisciplineFromStudent(studentId: number, disciplineI
 }
 
 export async function getAllUsers(showInactive = false, skip = 0, limit = 10): Promise<UserListResponse> {
-  const response = await fetch(`${API_BASE}/api/v1/users?show_inactive=${showInactive}&skip=${skip}&limit=${limit}`, {
+  const response = await fetch(`${API_BASE}/api/v1/users/?show_inactive=${showInactive}&skip=${skip}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
   if (!response.ok) {

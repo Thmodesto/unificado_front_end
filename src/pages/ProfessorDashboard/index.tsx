@@ -14,7 +14,7 @@ interface Professor {
 interface Discipline {
   id: number;
   name: string;
-  course_id: number;
+  course_ids: number[];
   prerequisites: number[];
 }
 
@@ -117,7 +117,7 @@ export default function ProfessorDashboard() {
                     <div className="flex items-center justify-between w-full">
                       <span className="text-[#2D2785]">{subject.name}</span>
                       <span className="text-gray-600 text-sm">
-                        Curso ID: {subject.course_id}
+                        Cursos: {subject.course_ids.join(', ')}
                       </span>
                     </div>
                   </AccordionTrigger>

@@ -14,7 +14,7 @@ interface Student {
 interface Discipline {
   id: number;
   name: string;
-  course_id: number;
+  course_ids: number[];
   prerequisites: number[];
 }
 
@@ -128,7 +128,7 @@ export default function Dashboard() {
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h2 className="text-xl font-semibold text-[#2D2785]">Nome: {student.username}</h2>
-            <p className="text-gray-700">Curso: ID {student.disciplines[0]?.course_id || 'Não informado'}</p>
+            <p className="text-gray-700">Curso: ID {student.disciplines[0] ? student.disciplines[0].course_ids[0] : 'Não informado'}</p>
             <p className="text-gray-500">RA: {student.ra_number || 'Não informado'}</p>
           </div>
           <div className="mt-4 md:mt-0 bg-[#FFDD00] text-[#2D2785] px-4 py-2 rounded-full font-semibold shadow">
