@@ -107,7 +107,7 @@ export default function ProfessorDashboard() {
             <p className="text-center text-gray-500">Nenhuma disciplina atribuída</p>
           ) : (
             <Accordion type="single" collapsible className="w-full space-y-4">
-              {professor.disciplines.map((subject, index) => (
+              {professor.disciplines.map((subject) => (
                 <AccordionItem
                   key={subject.id}
                   value={`subject-${subject.id}`}
@@ -125,7 +125,7 @@ export default function ProfessorDashboard() {
                   <AccordionContent className="bg-white px-6 py-4 rounded-b-2xl border-t border-gray-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className="text-gray-800"><strong>Curso ID:</strong> {subject.course_id}</p>
+                        <p className="text-gray-800"><strong>Curso IDs:</strong> {subject.course_ids.join(', ')}</p>
                         <p className="text-gray-800"><strong>Semestre:</strong> 2025.2</p>
                       </div>
                       <Accordion type="single" collapsible className="w-full">

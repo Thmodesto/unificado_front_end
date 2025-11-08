@@ -17,11 +17,11 @@ export default defineConfig({
         target: 'https://fp4pagmp8f.us-east-1.awsapprunner.com',
         changeOrigin: true,
         secure: true,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
             proxyReq.setHeader('Origin', 'http://localhost:5174');
           });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes) => {
             proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:5174';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
             proxyRes.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
