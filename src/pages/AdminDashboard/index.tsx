@@ -30,9 +30,6 @@ import type {
   Student,
   Teacher,
   UserPublic,
-  UserListResponse,
-  CourseCreateRequest,
-  DisciplineCreateRequest,
   StudentCreateRequest,
   StudentUpdateRequest,
   TeacherCreateRequest,
@@ -65,15 +62,9 @@ export default function AdminDashboard() {
   const [selectedStudentForDisciplines, setSelectedStudentForDisciplines] = useState<number | null>(null);
   const [selectedTeacherForDisciplines, setSelectedTeacherForDisciplines] = useState<number | null>(null);
 
-  const [disciplineToAdd, setDisciplineToAdd] = useState<number>(0);
-
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
 
   const [selectedAddDisciplineTeacher, setSelectedAddDisciplineTeacher] = useState<Record<number, string>>({});
-
-  const [selectedRemoveDisciplineStudent, setSelectedRemoveDisciplineStudent] = useState<Record<number, string>>({});
-
-  const [selectedRemoveDisciplineTeacher, setSelectedRemoveDisciplineTeacher] = useState<Record<number, string>>({});
 
 
   useEffect(() => {
