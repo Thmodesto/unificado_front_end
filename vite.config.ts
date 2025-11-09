@@ -18,17 +18,14 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('Origin', 'http://localhost:5174');
-          });
           proxy.on('proxyRes', (proxyRes) => {
-            proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:5174';
+            proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
             proxyRes.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
             proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
             // Handle redirects to prevent CORS issues
             if (proxyRes.statusCode && proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
-              proxyRes.headers.location = proxyRes.headers.location.replace('https://fp4pagmp8f.us-east-1.awsapprunner.com', 'http://localhost:5174');
+              proxyRes.headers.location = proxyRes.headers.location.replace('https://fp4pagmp8f.us-east-1.awsapprunner.com', 'http://localhost:5173');
             }
           });
         },

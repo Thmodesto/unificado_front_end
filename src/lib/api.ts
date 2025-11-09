@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.DEV ? '' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
+const API_BASE = import.meta.env.DEV ? ' ' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
+//const API_BASE = 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
 
 export interface Course {
   id: number;
@@ -264,10 +265,21 @@ export async function getStudent(id: number): Promise<Student> {
   const response = await fetch(`${API_BASE}/api/v1/students/${id}`, {
     headers: getAuthHeaders(),
   });
+  
+  const text = await response.text();
+  console.log("Resposta bruta da API:", text);
+
   if (!response.ok) {
+    console.error("Erro status:", response.status);
     throw new Error('Failed to fetch student');
   }
-  return response.json();
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Erro ao fazer parse do JSON:", err);
+    throw err;
+  }
 }
 
 export async function createStudent(studentData: StudentCreateRequest): Promise<Student> {
