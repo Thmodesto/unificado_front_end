@@ -370,3 +370,8 @@ export async function createTeacher(teacherData: TeacherCreateRequest): Promise<
   }
   return response.json();
 }
+
+export function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+}

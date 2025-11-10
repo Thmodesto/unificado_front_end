@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { getTeacher, getDisciplines } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { getTeacher, getDisciplines, logout } from "@/lib/api";
+import { useNavigate } from "react-router-dom";
 
 interface Professor {
   id: number;
@@ -19,6 +21,13 @@ interface Discipline {
 }
 
 export default function ProfessorDashboard() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const [professor, setProfessor] = useState<Professor | null>(null);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,8 +90,11 @@ export default function ProfessorDashboard() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-[#2D2785] text-white p-4 shadow-md">
-        <h1 className="text-2xl font-bold text-center">Painel do Professor - BioGraph</h1>
+      <header className="bg-[#2D2785] text-white p-4 shadow-md flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Painel do Professor - BioGraph</h1>
+        <Button onClick={handleLogout} variant="outline" className="text-black border-white hover:bg-white hover:text-[#2D2785]">
+          Logout
+        </Button>
       </header>
 
       {/* Professor Info */}
