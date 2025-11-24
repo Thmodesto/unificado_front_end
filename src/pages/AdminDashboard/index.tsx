@@ -12,7 +12,6 @@ import {
   createCourse,
   getDisciplines,
   createDiscipline,
-  updateDiscipline,
   getStudents,
   getStudent,
   createStudent,
@@ -67,7 +66,106 @@ export default function AdminDashboard() {
   const [newTeacher, setNewTeacher] = useState<TeacherCreateRequest>({ username: "", password: "" });
   const [editingStudent, setEditingStudent] = useState<StudentUpdateRequest>({} as StudentUpdateRequest);
   const [editingTeacher, setEditingTeacher] = useState<TeacherUpdateRequest>({} as TeacherUpdateRequest);
-  const [editingDiscipline, setEditingDiscipline] = useState<{ id: number; name: string; course_ids: number[]; prerequisites: number[] } | null>(null);
+  const [editingCoursesId, setEditingCoursesId] = useState<number | null>(null);
+  const [editingPrerequisitesId, setEditingPrerequisitesId] = useState<number | null>(null);
+  
+  const [editingCoursesValue, setEditingCoursesValue] = useState<number[]>([]);
+  const [editingPrerequisitesValue, setEditingPrerequisitesValue] = useState<number[]>([]);
+  
+  // Handler to start editing courses of a discipline
+  const startEditingCourses = (disciplineId: number, currentCourseIds: number[]) => {
+    setEditingCoursesId(disciplineId);
+    setEditingCoursesValue(currentCourseIds);
+    setEditingPrerequisitesId(null); // Close prerequisites editing if open
+  };
+  
+  // Handler to start editing prerequisites of a discipline
+  const startEditingPrerequisites = (disciplineId: number, currentPrerequisites: number[]) => {
+    setEditingPrerequisitesId(disciplineId);
+    setEditingPrerequisitesValue(currentPrerequisites);
+    setEditingCoursesId(null); // Close courses editing if open
+  };
+  
+  // Handler to cancel editing courses
+  const cancelEditingCourses = () => {
+    setEditingCoursesId(null);
+    setEditingCoursesValue([]);
+  };
+  
+  // Handler to cancel editing prerequisites
+  const cancelEditingPrerequisites = () => {
+    setEditingPrerequisitesId(null);
+    setEditingPrerequisitesValue([]);
+  };
+  
+  // Handler to save courses editing
+  const saveEditingCourses = async (disciplineId: number) => {
+    try {
+      const discipline = disciplines.find(d => d.id === disciplineId);
+      if (!discipline) {
+        alert('Disciplina não encontrada');
+        return;
+      }
+
+      const originalCourseIds = new Set(discipline.course_ids);
+      const newCourseIds = new Set(editingCoursesValue);
+
+      // Courses to add
+      const toAdd = [...newCourseIds].filter(id => !originalCourseIds.has(id));
+      // Courses to remove
+      const toRemove = [...originalCourseIds].filter(id => !newCourseIds.has(id));
+
+      for (const courseId of toAdd) {
+        await addCourseToDiscipline(disciplineId, courseId);
+      }
+
+      for (const courseId of toRemove) {
+        await removeCourseFromDiscipline(disciplineId, courseId);
+      }
+
+      setEditingCoursesId(null);
+      setEditingCoursesValue([]);
+      fetchAllData();
+    } catch (err) {
+      console.error('Erro ao salvar cursos da disciplina:', err);
+      alert('Erro ao salvar cursos. Verifique os dados e tente novamente.');
+    }
+  };
+  
+  // Handler to save prerequisites editing
+  const saveEditingPrerequisites = async (disciplineId: number) => {
+    try {
+      const discipline = disciplines.find(d => d.id === disciplineId);
+      if (!discipline) {
+        alert('Disciplina não encontrada');
+        return;
+      }
+
+      const originalPrerequisites = new Set(discipline.prerequisites);
+      const newPrerequisites = new Set(editingPrerequisitesValue);
+
+      // Prerequisites to add
+      const toAdd = [...newPrerequisites].filter(id => !originalPrerequisites.has(id));
+      // Prerequisites to remove
+      const toRemove = [...originalPrerequisites].filter(id => !newPrerequisites.has(id));
+
+      for (const prereqId of toAdd) {
+        await addPrerequisiteToDiscipline(disciplineId, prereqId);
+      }
+
+      // Note: API does not specify remove prerequisite endpoint; if it existed, call here
+      if (toRemove.length > 0) {
+        console.warn('Removing prerequisites is not supported by current API and will be ignored.');
+      }
+
+      setEditingPrerequisitesId(null);
+      setEditingPrerequisitesValue([]);
+      fetchAllData();
+    } catch (err) {
+      console.error('Erro ao salvar pré-requisitos da disciplina:', err);
+      alert('Erro ao salvar pré-requisitos. Verifique os dados e tente novamente.');
+    }
+  };
 
   // State for UI
   const [loading, setLoading] = useState(true);
@@ -79,7 +177,6 @@ export default function AdminDashboard() {
   const [selectedTeacherForDisciplines, setSelectedTeacherForDisciplines] = useState<number | null>(null);
 
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
-  const [selectedAddCourse, setSelectedAddCourse] = useState<Record<number, string>>({});
 
   const [selectedAddDisciplineTeacher, setSelectedAddDisciplineTeacher] = useState<Record<number, string>>({});
 
@@ -182,21 +279,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateDiscipline = async (disciplineId: number) => {
-    if (!editingDiscipline) return;
-    try {
-      await updateDiscipline(disciplineId, {
-        name: editingDiscipline.name,
-        course_ids: editingDiscipline.course_ids,
-        prerequisites: editingDiscipline.prerequisites,
-      });
-      setEditingDiscipline(null);
-      fetchAllData();
-    } catch (err) {
-      console.error('Erro ao atualizar disciplina:', err);
-      alert('Erro ao atualizar disciplina. Verifique os dados e tente novamente.');
-    }
-  };
+  // Removed unused handleUpdateDiscipline function to fix TS warning
 
   const handleCreateStudent = async () => {
     if (!newStudent.username || !newStudent.password) return;
@@ -220,37 +303,12 @@ const handleCreateTeacher = async () => {
   }
 };
 
-const handleAddCourseToDiscipline = async (disciplineId: number, courseId: number) => {
-  try {
-    await addCourseToDiscipline(disciplineId, courseId);
-    fetchAllData();
-  } catch (err) {
-    console.error('Erro ao adicionar curso à disciplina:', err);
-    alert('Erro ao adicionar curso à disciplina. Verifique os dados e tente novamente.');
-  }
-};
+  // Removed unused handleAddCourseToDiscipline function to fix TS warning
 
-const handleRemoveCourseFromDiscipline = async (disciplineId: number, courseId: number) => {
-  try {
-    await removeCourseFromDiscipline(disciplineId, courseId);
-    fetchAllData();
-  } catch (err) {
-    console.error('Erro ao remover curso da disciplina:', err);
-    alert('Erro ao remover curso da disciplina. Verifique os dados e tente novamente.');
-  }
-};
 
-  const [selectedAddPrerequisite, setSelectedAddPrerequisite] = useState<Record<number, string>>({});
 
-  const handleAddPrerequisite = async (disciplineId: number, prerequisiteId: number) => {
-    try {
-      await addPrerequisiteToDiscipline(disciplineId, prerequisiteId);
-      fetchAllData();
-    } catch (err) {
-      console.error('Erro ao adicionar pré-requisito:', err);
-      alert('Erro ao adicionar pré-requisito. Verifique os dados e tente novamente.');
-    }
-  };
+  // Removed unused selectedAddPrerequisite, setSelectedAddPrerequisite and handleAddPrerequisite to fix TS warning
+
 
   // Remove unused state and handlers
   // const [selectedAddCourse, setSelectedAddCourse] = useState<Record<number, string>>({});
@@ -564,61 +622,24 @@ const handleRemoveCourseFromDiscipline = async (disciplineId: number, courseId: 
                   <tr key={discipline.id}>
                     <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
                     <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            <div className="space-y-1">
+                              {discipline.course_ids.length > 0 ? (
+                                discipline.course_ids.map(id => {
+                                  const courseName = courses.find(c => c.id === id)?.name;
+                                  if (!courseName) return null;
+                                  return (
+                                    <div key={id} className="flex justify-between items-center border rounded px-2 py-1">
+                                      <span>{courseName}</span>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <span>Nenhum</span>
+                              )}
+                            </div>
+                          </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      <div className="space-y-1">
-                        {discipline.course_ids.length > 0 ? (
-                          discipline.course_ids.map(id => {
-                            const courseName = courses.find(c => c.id === id)?.name;
-                            if (!courseName) return null;
-                            return (
-                              <div key={id} className="flex justify-between items-center border rounded px-2 py-1">
-                                <span>{courseName}</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRemoveCourseFromDiscipline(discipline.id, id)}
-                                >
-                                  Remover
-                                </Button>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <span>Nenhum</span>
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <select
-                          value={selectedAddCourse[discipline.id] || ""}
-                          onChange={e => setSelectedAddCourse({ ...selectedAddCourse, [discipline.id]: e.target.value })}
-                          className="border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="" disabled>Adicionar curso</option>
-                          {courses
-                            .filter(c => !discipline.course_ids.includes(c.id))
-                            .map(c => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))
-                          }
-                        </select>
-                        <Button
-                          className="ml-2"
-                          size="sm"
-                          onClick={() => {
-                            const courseId = parseInt(selectedAddCourse[discipline.id]);
-                            if (courseId) {
-                              handleAddCourseToDiscipline(discipline.id, courseId);
-                              setSelectedAddCourse({ ...selectedAddCourse, [discipline.id]: "" });
-                            }
-                          }}
-                          disabled={!selectedAddCourse[discipline.id]}
-                        >
-                          Adicionar
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {/* Pre-requisites Section: List current prerequisites */}
                       <div className="space-y-1">
                         {discipline.prerequisites.length > 0 ? (
                           discipline.prerequisites.map(id => {
@@ -634,204 +655,90 @@ const handleRemoveCourseFromDiscipline = async (disciplineId: number, courseId: 
                           <span>Nenhum</span>
                         )}
                       </div>
-                      {/* Add Prerequisite Section */}
-                      <div className="mt-2">
-                        <select
-                          value={selectedAddPrerequisite[discipline.id] ?? ""}
-                          onChange={e => { 
-                            setSelectedAddPrerequisite(prev => ({ ...prev, [discipline.id]: e.target.value }));
-                          }}
-                          className="border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="" disabled>Adicionar pré-requisito</option>
-                          {disciplines
-                            .filter(d => d.id !== discipline.id && !discipline.prerequisites.includes(d.id))
-                            .map(d => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))
-                          }
-                        </select>
-                        <Button
-                          className="ml-2"
-                          size="sm"
-                          onClick={() => {
-                            const prereqId = parseInt(selectedAddPrerequisite[discipline.id]);
-                            if (prereqId) {
-                              handleAddPrerequisite(discipline.id, prereqId);
-                              setSelectedAddPrerequisite(prev => ({ ...prev, [discipline.id]: "" }));
-                            }
-                          }}
-                          disabled={!selectedAddPrerequisite[discipline.id]}
-                        >
-                          Adicionar
-                        </Button>
-                      </div>
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      <Button
-                        onClick={() => setEditingDiscipline(discipline)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Editar
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => startEditingCourses(discipline.id, discipline.course_ids)}
+                        >
+                          Editar Curso
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => startEditingPrerequisites(discipline.id, discipline.prerequisites)}
+                        >
+                          Editar Pré-Requisitos
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-                  </table>
-                </div>
-                {editingDiscipline && (
-                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Editar Disciplina</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <Input
-                        placeholder="Nome"
-                        value={editingDiscipline.name}
-                        onChange={(e) => setEditingDiscipline({...editingDiscipline, name: e.target.value})}
-                      />
-                        {/* Course multiselect */}
-                        <div>
-                          <label htmlFor="courses-multiselect" className="block mb-1 font-medium">Cursos</label>
-                          <select
-                            id="courses-multiselect"
-                            multiple
-                            value={editingDiscipline.course_ids.map(id => id.toString())}
-                            onChange={e => {
-                              const options = e.target.options;
-                              let selected: number[] = [];
-                              for (let i = 0; i < options.length; i++) {
-                                if (options[i].selected) {
-                                  selected.push(parseInt(options[i].value));
-                                }
-                              }
-                              setEditingDiscipline({ ...editingDiscipline, course_ids: selected });
-                            }}
-                            className="w-full border border-gray-300 rounded p-2"
-                          >
-                            {/* No course options here as per new design */}
-                          </select>
-                        </div>
-                      {/* Prerequisite add dropdown */}
-                      <div>
-                        <label htmlFor="add-prerequisite-select" className="block mb-1 font-medium">Adicionar Pré-requisito</label>
-                        <select
-                          id="add-prerequisite-select"
-                          value={selectedAddPrerequisite[editingDiscipline?.id ?? 0] || ""}
-                          onChange={e => setSelectedAddPrerequisite(prev => ({ ...prev, [editingDiscipline!.id]: e.target.value }))}
-                          className="w-full border border-gray-300 rounded p-2"
-                        >
-                          <option value="" disabled>Selecione um pré-requisito</option>
-                          {disciplines
-                            .filter(d => d.id !== editingDiscipline?.id && !editingDiscipline?.prerequisites.includes(d.id))
-                            .map(d => (
-                              <option key={d.id} value={d.id.toString()}>{d.name}</option>
-                            ))
-                          }
-                        </select>
-                        <Button
-                          className="mt-2"
-                          size="sm"
-                          onClick={() => {
-                            if (selectedAddPrerequisite[editingDiscipline?.id ?? 0]) {
-                              handleAddPrerequisite(editingDiscipline!.id, parseInt(selectedAddPrerequisite[editingDiscipline!.id]));
-                              setSelectedAddPrerequisite(prev => ({ ...prev, [editingDiscipline!.id]: "" }));
-                            }
-                          }}
-                          disabled={!selectedAddPrerequisite[editingDiscipline?.id ?? 0]}
-                        >
-                          Adicionar Pré-requisito
-                        </Button>
-                      </div>
-                      {/* Display current prerequisites */}
-                      <div className="mt-4">
-                        <h4 className="font-medium mb-1">Pré-requisitos Atuais:</h4>
-                        <ul className="list-disc list-inside">
-                          {editingDiscipline.prerequisites.length > 0 ? (
-                            editingDiscipline.prerequisites.map(id => (
-                              <li key={id}>{disciplines.find(d => d.id === id)?.name || id}</li>
-                            ))
-                          ) : (
-                            <li>Nenhum</li>
-                          )}
-                        </ul>
-                      </div>
+            </table>
+          </div>
 
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            {editingDiscipline.course_ids.length > 0
-                              ? editingDiscipline.course_ids.map(id => courses.find(c => c.id === id)?.name).join(', ')
-                              : "Selecione cursos"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-2">
-                            {courses.map((course) => (
-                              <div key={course.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`edit-course-${course.id}`}
-                                  checked={editingDiscipline.course_ids.includes(course.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setEditingDiscipline({...editingDiscipline, course_ids: [...editingDiscipline.course_ids, course.id]});
-                                    } else {
-                                      setEditingDiscipline({...editingDiscipline, course_ids: editingDiscipline.course_ids.filter(id => id !== course.id)});
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`edit-course-${course.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                  {course.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            {editingDiscipline.prerequisites.length > 0
-                              ? editingDiscipline.prerequisites.map(id => disciplines.find(d => d.id === id)?.name).join(', ')
-                              : "Selecione prérequisitos"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-2">
-                            {disciplines
-                              .filter(d => d.id !== editingDiscipline.id)
-                              .map((discipline) => (
-                                <div key={discipline.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`edit-prereq-${discipline.id}`}
-                                    checked={editingDiscipline.prerequisites.includes(discipline.id)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setEditingDiscipline({...editingDiscipline, prerequisites: [...editingDiscipline.prerequisites, discipline.id]});
-                                      } else {
-                                        setEditingDiscipline({...editingDiscipline, prerequisites: editingDiscipline.prerequisites.filter(id => id !== discipline.id)});
-                                      }
-                                    }}
-                                  />
-                                  <label htmlFor={`edit-prereq-${discipline.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    {discipline.name}
-                                  </label>
-                                </div>
-                              ))
-                            }
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button onClick={() => handleUpdateDiscipline(editingDiscipline.id)}>Salvar</Button>
-                      <Button variant="outline" onClick={() => setEditingDiscipline(null)}>Cancelar</Button>
-                    </div>
+          {/* Courses editing section */}
+          {editingCoursesId !== null && (
+            <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+              <h4 className="text-lg font-semibold mb-2">Editar Cursos - Disciplina ID: {editingCoursesId}</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {courses.map(course => (
+                  <div key={course.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-course-${course.id}`}
+                      checked={editingCoursesValue.includes(course.id)}
+                      onCheckedChange={checked => {
+                        if (checked) {
+                          setEditingCoursesValue([...editingCoursesValue, course.id]);
+                        } else {
+                          setEditingCoursesValue(editingCoursesValue.filter(id => id !== course.id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`edit-course-${course.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {course.name}
+                    </label>
                   </div>
-                )}
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => saveEditingCourses(editingCoursesId)}>Salvar</Button>
+                <Button variant="outline" onClick={cancelEditingCourses}>Cancelar</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Prerequisites editing section */}
+          {editingPrerequisitesId !== null && (
+            <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+              <h4 className="text-lg font-semibold mb-2">Editar Pré-Requisitos - Disciplina ID: {editingPrerequisitesId}</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {disciplines.map(disciplineOption => (
+                  <div key={disciplineOption.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-prereq-${disciplineOption.id}`}
+                      checked={editingPrerequisitesValue.includes(disciplineOption.id)}
+                      onCheckedChange={checked => {
+                        if (checked) {
+                          setEditingPrerequisitesValue([...editingPrerequisitesValue, disciplineOption.id]);
+                        } else {
+                          setEditingPrerequisitesValue(editingPrerequisitesValue.filter(id => id !== disciplineOption.id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`edit-prereq-${disciplineOption.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {disciplineOption.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => saveEditingPrerequisites(editingPrerequisitesId)}>Salvar</Button>
+                <Button variant="outline" onClick={cancelEditingPrerequisites}>Cancelar</Button>
+              </div>
+            </div>
+          )}
               </div>
             </TabsContent>
 
