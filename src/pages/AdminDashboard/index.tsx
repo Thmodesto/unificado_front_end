@@ -23,9 +23,7 @@ import {
   updateTeacher,
   addDisciplineToTeacher,
   removeDisciplineFromTeacher,
-  logout,
 } from "@/lib/api";
-import { useNavigate } from "react-router-dom";
 import type {
   Course,
   Discipline,
@@ -39,13 +37,6 @@ import type {
 } from "@/lib/api";
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   // State for data
   const [users, setUsers] = useState<UserPublic[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -272,11 +263,8 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-[#2D2785] text-white p-4 shadow-md flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Painel Administrativo - BioGraph</h1>
-        <Button onClick={handleLogout} variant="outline" className="text-black border-white hover:bg-white hover:text-[#2D2785]">
-          Logout
-        </Button>
+      <header className="bg-[#2D2785] text-white p-4 shadow-md">
+        <h1 className="text-2xl font-bold text-center">Painel Administrativo - BioGraph</h1>
       </header>
 
       {/* Admin Info */}
@@ -962,6 +950,7 @@ export default function AdminDashboard() {
                 )}
               </div>
             </TabsContent>
+
           </Tabs>
         </div>
       </main>
