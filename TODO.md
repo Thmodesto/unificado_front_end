@@ -1,37 +1,26 @@
-# TODO - Admin Dashboard
+# TODO - Frontend update to reflect local API changes (excluding graphs)
 
-## API Functions to Add
-- [x] createCourse(courseData: CourseCreateRequest): Promise<Course>
-- [x] createDiscipline(disciplineData: DisciplineCreateRequest): Promise<Discipline>
-- [x] updateStudent(id: number, studentData: StudentUpdateRequest): Promise<Student>
-- [x] updateTeacher(id: number, teacherData: TeacherUpdateRequest): Promise<Teacher>
-- [x] getAllUsers(showInactive?: boolean, skip?: number, limit?: number): Promise<UserListResponse>
-- [x] toggleUserActive(id: number): Promise<{message: string, user: UserPublic}>
-- [x] addDisciplineToStudent(studentId: number, disciplineId: number): Promise<Student>
-- [x] removeDisciplineFromStudent(studentId: number, disciplineId: number): Promise<Student>
-- [x] addDisciplineToTeacher(teacherId: number, disciplineId: number): Promise<Teacher>
-- [x] removeDisciplineFromTeacher(teacherId: number, disciplineId: number): Promise<Teacher>
+## Completed:
+- Updated src/lib/api.ts to reflect discipline status field.
+- Updated Dashboard to display discipline status.
 
-## Admin Dashboard Page
-- [x] Create src/pages/AdminDashboard/index.tsx
-- [x] Implement header with title
-- [x] Create accordion sections for each management area
-- [x] Add forms for creating courses, disciplines, students, teachers
-- [x] Add RA field to student creation and edit forms
-- [x] Add employee_number field to teacher creation and edit forms
-- [x] Add tables for listing users, courses, disciplines
-- [x] Add edit functionality for students and teachers
-- [x] Add toggle active/inactive for users
-- [x] Add discipline management (add/remove from students/teachers)
+## New Features to Implement (per backend improvements report):
+- Create frontend UI and logic for creating Curriculum Schedules.
+- Create frontend UI and logic for assigning a Curriculum Schedule to a student.
+- Create frontend UI and logic for changing a student's course without modifying disciplines.
 
-## UI Components
-- [x] Use existing UI components (Accordion, Button, Input, etc.)
-- [x] Style consistently with existing dashboards
-- [x] Add loading states and error handling
-- [x] Add success/error messages for actions
+## Step 1 - Curriculum Schedule Creation
+- Add form for creating curriculum schedules: name, course, and selecting disciplines.
+- Connect to API function createCurriculumSchedule.
 
-## Testing
-- [ ] Test all CRUD operations
-- [ ] Test user role restrictions (admin only)
-- [ ] Test form validations
-- [ ] Test responsive design
+## Step 2 - Assign Curriculum Schedule to Student
+- Add UI to select a student and assign a created curriculum schedule.
+- Connect to API function assignCurriculumScheduleToStudent.
+
+## Step 3 - Change Student Course Feature
+- UI to change student's course without modifying disciplines.
+- Connect to API function changeStudentCourse.
+
+## Step 4 - Testing & Verification
+- Test all new features for correct API interaction and UI behavior.
+- Verify no regressions on existing Dashboard features.

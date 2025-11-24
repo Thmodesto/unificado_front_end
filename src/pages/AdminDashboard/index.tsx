@@ -14,16 +14,25 @@ import {
   createDiscipline,
   updateDiscipline,
   getStudents,
+  getStudent,
   createStudent,
   updateStudent,
   addDisciplineToStudent,
   removeDisciplineFromStudent,
   getTeachers,
+  getTeacher,
   createTeacher,
   updateTeacher,
   addDisciplineToTeacher,
   removeDisciplineFromTeacher,
+  addCourseToDiscipline,
+  removeCourseFromDiscipline,
+  addPrerequisiteToDiscipline,
+  updateStudentDisciplineStatus,
+  logout,
 } from "@/lib/api";
+
+import { useNavigate } from "react-router-dom";
 import type {
   Course,
   Discipline,
@@ -37,6 +46,13 @@ import type {
 } from "@/lib/api";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   // State for data
   const [users, setUsers] = useState<UserPublic[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -49,8 +65,8 @@ export default function AdminDashboard() {
   const [newDiscipline, setNewDiscipline] = useState({ name: "", course_ids: [] as number[], prerequisites: [] as number[] });
   const [newStudent, setNewStudent] = useState<StudentCreateRequest>({ username: "", password: "" });
   const [newTeacher, setNewTeacher] = useState<TeacherCreateRequest>({ username: "", password: "" });
-  const [editingStudent, setEditingStudent] = useState<StudentUpdateRequest>({});
-  const [editingTeacher, setEditingTeacher] = useState<TeacherUpdateRequest>({});
+  const [editingStudent, setEditingStudent] = useState<StudentUpdateRequest>({} as StudentUpdateRequest);
+  const [editingTeacher, setEditingTeacher] = useState<TeacherUpdateRequest>({} as TeacherUpdateRequest);
   const [editingDiscipline, setEditingDiscipline] = useState<{ id: number; name: string; course_ids: number[]; prerequisites: number[] } | null>(null);
 
   // State for UI
@@ -63,8 +79,10 @@ export default function AdminDashboard() {
   const [selectedTeacherForDisciplines, setSelectedTeacherForDisciplines] = useState<number | null>(null);
 
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
+  const [selectedAddCourse, setSelectedAddCourse] = useState<Record<number, string>>({});
 
   const [selectedAddDisciplineTeacher, setSelectedAddDisciplineTeacher] = useState<Record<number, string>>({});
+
 
 
   useEffect(() => {
@@ -81,18 +99,59 @@ export default function AdminDashboard() {
         studentsData,
         teachersData
       ] = await Promise.all([
-        getAllUsers(showInactive),
-        getCourses(),
-        getDisciplines(),
-        getStudents(),
-        getTeachers(),
+      getAllUsers(showInactive),
+      getCourses(),
+      getDisciplines(0, 1000),
+      getStudents(),
+      getTeachers(),
       ]);
+
+      // Debug logging to verify disciplines data in students and teachers
+      console.log("Fetched students data:", studentsData);
+      console.log("Fetched teachers data:", teachersData);
+
+      // Enrich students and teachers with detailed disciplines, if needed
+      // Check if disciplines arrays are populated, if empty fetch individual details
+      const studentsWithDisciplines = await Promise.all(studentsData.map(async (student) => {
+        if (!student.disciplines || student.disciplines.length === 0) {
+          // fetch detailed student data including disciplines (if API supports)
+          try {
+            const detailedStudent = await getStudent(student.id);
+            // Add disciplines_count from disciplines length if missing
+            if (!detailedStudent.disciplines_count && detailedStudent.disciplines) {
+              detailedStudent.disciplines_count = detailedStudent.disciplines.length;
+            }
+            return detailedStudent;
+          } catch (e) {
+            console.error(`Failed to fetch details for student ${student.id}:`, e);
+            return student;
+          }
+        }
+        // Also ensure disciplines_count is set for students already having disciplines
+        if (!student.disciplines_count && student.disciplines) {
+          student.disciplines_count = student.disciplines.length;
+        }
+        return student;
+      }));
+
+      const teachersWithDisciplines = await Promise.all(teachersData.map(async (teacher) => {
+        if (!teacher.disciplines || teacher.disciplines.length === 0) {
+          try {
+            const detailedTeacher = await getTeacher(teacher.id);
+            return detailedTeacher;
+          } catch (e) {
+            console.error(`Failed to fetch details for teacher ${teacher.id}:`, e);
+            return teacher;
+          }
+        }
+        return teacher;
+      }));
 
       setUsers(usersData.users);
       setCourses(coursesData);
       setDisciplines(disciplinesData);
-      setStudents(studentsData);
-      setTeachers(teachersData);
+      setStudents(studentsWithDisciplines);
+      setTeachers(teachersWithDisciplines);
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error(err);
@@ -150,23 +209,58 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreateTeacher = async () => {
-    if (!newTeacher.username || !newTeacher.password) return;
+const handleCreateTeacher = async () => {
+  if (!newTeacher.username || !newTeacher.password) return;
+  try {
+    await createTeacher(newTeacher);
+    setNewTeacher({ username: "", password: "" });
+    fetchAllData();
+  } catch (err) {
+    console.error('Erro ao criar professor:', err);
+  }
+};
+
+const handleAddCourseToDiscipline = async (disciplineId: number, courseId: number) => {
+  try {
+    await addCourseToDiscipline(disciplineId, courseId);
+    fetchAllData();
+  } catch (err) {
+    console.error('Erro ao adicionar curso à disciplina:', err);
+    alert('Erro ao adicionar curso à disciplina. Verifique os dados e tente novamente.');
+  }
+};
+
+const handleRemoveCourseFromDiscipline = async (disciplineId: number, courseId: number) => {
+  try {
+    await removeCourseFromDiscipline(disciplineId, courseId);
+    fetchAllData();
+  } catch (err) {
+    console.error('Erro ao remover curso da disciplina:', err);
+    alert('Erro ao remover curso da disciplina. Verifique os dados e tente novamente.');
+  }
+};
+
+  const [selectedAddPrerequisite, setSelectedAddPrerequisite] = useState<Record<number, string>>({});
+
+  const handleAddPrerequisite = async (disciplineId: number, prerequisiteId: number) => {
     try {
-      await createTeacher(newTeacher);
-      setNewTeacher({ username: "", password: "" });
+      await addPrerequisiteToDiscipline(disciplineId, prerequisiteId);
       fetchAllData();
     } catch (err) {
-      console.error('Erro ao criar professor:', err);
+      console.error('Erro ao adicionar pré-requisito:', err);
+      alert('Erro ao adicionar pré-requisito. Verifique os dados e tente novamente.');
     }
   };
+
+  // Remove unused state and handlers
+  // const [selectedAddCourse, setSelectedAddCourse] = useState<Record<number, string>>({});
 
   const handleToggleUserActive = async (userId: number) => {
     try {
       await toggleUserActive(userId);
       fetchAllData();
     } catch (err) {
-      console.error('Erro ao alterar status do usuário:', err);
+      console.error('Erro ao alterar status do usu├írio:', err);
     }
   };
 
@@ -263,8 +357,11 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-[#2D2785] text-white p-4 shadow-md">
-        <h1 className="text-2xl font-bold text-center">Painel Administrativo - BioGraph</h1>
+      <header className="bg-[#2D2785] text-white p-4 shadow-md flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Painel Administrativo - BioGraph</h1>
+        <Button onClick={handleLogout} variant="outline" className="text-black border-white hover:bg-white hover:text-[#2D2785]">
+          Logout
+        </Button>
       </header>
 
       {/* Admin Info */}
@@ -287,12 +384,12 @@ export default function AdminDashboard() {
               <TabsTrigger value="teachers" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Professores</TabsTrigger>
             </TabsList>
 
-            {/* Gerenciar Usuários */}
+            {/* Gerenciar Usu├írios */}
             <TabsContent value="users" className="mt-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2">
-                    <input
+                        <input
                       type="checkbox"
                       checked={showInactive}
                       onChange={(e) => setShowInactive(e.target.checked)}
@@ -308,12 +405,12 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">Username</th>
                         <th className="border border-gray-300 px-4 py-2">Email</th>
                         <th className="border border-gray-300 px-4 py-2">Role</th>
-                        <th className="border border-gray-300 px-4 py-2">Status</th>
-                        <th className="border border-gray-300 px-4 py-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
+                    <th className="border border-gray-300 px-4 py-2">Status</th>
+                    <th className="border border-gray-300 px-4 py-2">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
                         <tr key={user.id}>
                           <td className="border border-gray-300 px-4 py-2">{user.id}</td>
                           <td className="border border-gray-300 px-4 py-2">{user.username}</td>
@@ -419,7 +516,7 @@ export default function AdminDashboard() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        {newDiscipline.prerequisites.length > 0
+                  {newDiscipline.prerequisites.length > 0
                           ? newDiscipline.prerequisites.map(id => disciplines.find(d => d.id === id)?.name).join(', ')
                           : "Selecione pré-requisitos"
                         }
@@ -458,38 +555,130 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">ID</th>
                         <th className="border border-gray-300 px-4 py-2">Nome</th>
                         <th className="border border-gray-300 px-4 py-2">Curso</th>
-                        <th className="border border-gray-300 px-4 py-2">Pré-requisitos</th>
+                        <th className="border border-gray-300 px-4 py-2">Prérequisitos</th>
                         <th className="border border-gray-300 px-4 py-2">Ações</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {disciplines.map((discipline) => (
-                        <tr key={discipline.id}>
-                          <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
-                          <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {discipline.course_ids.map(id => courses.find(c => c.id === id)?.name).filter(Boolean).join(', ') || 'N/A'}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {discipline.prerequisites.length > 0
-                              ? discipline.prerequisites.map(id =>
-                                  disciplines.find(d => d.id === id)?.name || id
-                                ).join(', ')
-                              : 'Nenhum'
+              <tbody>
+                {disciplines.map((discipline) => (
+                  <tr key={discipline.id}>
+                    <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
+                    <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <div className="space-y-1">
+                        {discipline.course_ids.length > 0 ? (
+                          discipline.course_ids.map(id => {
+                            const courseName = courses.find(c => c.id === id)?.name;
+                            if (!courseName) return null;
+                            return (
+                              <div key={id} className="flex justify-between items-center border rounded px-2 py-1">
+                                <span>{courseName}</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveCourseFromDiscipline(discipline.id, id)}
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <span>Nenhum</span>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <select
+                          value={selectedAddCourse[discipline.id] || ""}
+                          onChange={e => setSelectedAddCourse({ ...selectedAddCourse, [discipline.id]: e.target.value })}
+                          className="border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="" disabled>Adicionar curso</option>
+                          {courses
+                            .filter(c => !discipline.course_ids.includes(c.id))
+                            .map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))
+                          }
+                        </select>
+                        <Button
+                          className="ml-2"
+                          size="sm"
+                          onClick={() => {
+                            const courseId = parseInt(selectedAddCourse[discipline.id]);
+                            if (courseId) {
+                              handleAddCourseToDiscipline(discipline.id, courseId);
+                              setSelectedAddCourse({ ...selectedAddCourse, [discipline.id]: "" });
                             }
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            <Button
-                              onClick={() => setEditingDiscipline(discipline)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              Editar
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                          }}
+                          disabled={!selectedAddCourse[discipline.id]}
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {/* Pre-requisites Section: List current prerequisites */}
+                      <div className="space-y-1">
+                        {discipline.prerequisites.length > 0 ? (
+                          discipline.prerequisites.map(id => {
+                            const prereqName = disciplines.find(d => d.id === id)?.name;
+                            if (!prereqName) return null;
+                            return (
+                              <div key={id} className="border rounded px-2 py-1">
+                                <span>{prereqName}</span>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <span>Nenhum</span>
+                        )}
+                      </div>
+                      {/* Add Prerequisite Section */}
+                      <div className="mt-2">
+                        <select
+                          value={selectedAddPrerequisite[discipline.id] ?? ""}
+                          onChange={e => { 
+                            setSelectedAddPrerequisite(prev => ({ ...prev, [discipline.id]: e.target.value }));
+                          }}
+                          className="border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="" disabled>Adicionar pré-requisito</option>
+                          {disciplines
+                            .filter(d => d.id !== discipline.id && !discipline.prerequisites.includes(d.id))
+                            .map(d => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))
+                          }
+                        </select>
+                        <Button
+                          className="ml-2"
+                          size="sm"
+                          onClick={() => {
+                            const prereqId = parseInt(selectedAddPrerequisite[discipline.id]);
+                            if (prereqId) {
+                              handleAddPrerequisite(discipline.id, prereqId);
+                              setSelectedAddPrerequisite(prev => ({ ...prev, [discipline.id]: "" }));
+                            }
+                          }}
+                          disabled={!selectedAddPrerequisite[discipline.id]}
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <Button
+                        onClick={() => setEditingDiscipline(discipline)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Editar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
                   </table>
                 </div>
                 {editingDiscipline && (
@@ -501,6 +690,72 @@ export default function AdminDashboard() {
                         value={editingDiscipline.name}
                         onChange={(e) => setEditingDiscipline({...editingDiscipline, name: e.target.value})}
                       />
+                        {/* Course multiselect */}
+                        <div>
+                          <label htmlFor="courses-multiselect" className="block mb-1 font-medium">Cursos</label>
+                          <select
+                            id="courses-multiselect"
+                            multiple
+                            value={editingDiscipline.course_ids.map(id => id.toString())}
+                            onChange={e => {
+                              const options = e.target.options;
+                              let selected: number[] = [];
+                              for (let i = 0; i < options.length; i++) {
+                                if (options[i].selected) {
+                                  selected.push(parseInt(options[i].value));
+                                }
+                              }
+                              setEditingDiscipline({ ...editingDiscipline, course_ids: selected });
+                            }}
+                            className="w-full border border-gray-300 rounded p-2"
+                          >
+                            {/* No course options here as per new design */}
+                          </select>
+                        </div>
+                      {/* Prerequisite add dropdown */}
+                      <div>
+                        <label htmlFor="add-prerequisite-select" className="block mb-1 font-medium">Adicionar Pré-requisito</label>
+                        <select
+                          id="add-prerequisite-select"
+                          value={selectedAddPrerequisite[editingDiscipline?.id ?? 0] || ""}
+                          onChange={e => setSelectedAddPrerequisite(prev => ({ ...prev, [editingDiscipline!.id]: e.target.value }))}
+                          className="w-full border border-gray-300 rounded p-2"
+                        >
+                          <option value="" disabled>Selecione um pré-requisito</option>
+                          {disciplines
+                            .filter(d => d.id !== editingDiscipline?.id && !editingDiscipline?.prerequisites.includes(d.id))
+                            .map(d => (
+                              <option key={d.id} value={d.id.toString()}>{d.name}</option>
+                            ))
+                          }
+                        </select>
+                        <Button
+                          className="mt-2"
+                          size="sm"
+                          onClick={() => {
+                            if (selectedAddPrerequisite[editingDiscipline?.id ?? 0]) {
+                              handleAddPrerequisite(editingDiscipline!.id, parseInt(selectedAddPrerequisite[editingDiscipline!.id]));
+                              setSelectedAddPrerequisite(prev => ({ ...prev, [editingDiscipline!.id]: "" }));
+                            }
+                          }}
+                          disabled={!selectedAddPrerequisite[editingDiscipline?.id ?? 0]}
+                        >
+                          Adicionar Pré-requisito
+                        </Button>
+                      </div>
+                      {/* Display current prerequisites */}
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-1">Pré-requisitos Atuais:</h4>
+                        <ul className="list-disc list-inside">
+                          {editingDiscipline.prerequisites.length > 0 ? (
+                            editingDiscipline.prerequisites.map(id => (
+                              <li key={id}>{disciplines.find(d => d.id === id)?.name || id}</li>
+                            ))
+                          ) : (
+                            <li>Nenhum</li>
+                          )}
+                        </ul>
+                      </div>
 
                       <Popover>
                         <PopoverTrigger asChild>
@@ -540,7 +795,7 @@ export default function AdminDashboard() {
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             {editingDiscipline.prerequisites.length > 0
                               ? editingDiscipline.prerequisites.map(id => disciplines.find(d => d.id === id)?.name).join(', ')
-                              : "Selecione pré-requisitos"
+                              : "Selecione prérequisitos"
                             }
                           </Button>
                         </PopoverTrigger>
@@ -616,6 +871,8 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">Username</th>
                         <th className="border border-gray-300 px-4 py-2">Email</th>
                         <th className="border border-gray-300 px-4 py-2">RA</th>
+                        <th className="border border-gray-300 px-4 py-2">Curso</th>
+                        <th className="border border-gray-300 px-4 py-2">Qtd. Disciplinas</th>
                         <th className="border border-gray-300 px-4 py-2">Status</th>
                         <th className="border border-gray-300 px-4 py-2">Ações</th>
                       </tr>
@@ -627,6 +884,8 @@ export default function AdminDashboard() {
                           <td className="border border-gray-300 px-4 py-2">{student.username}</td>
                           <td className="border border-gray-300 px-4 py-2">{student.email || '-'}</td>
                           <td className="border border-gray-300 px-4 py-2">{student.ra_number || '-'}</td>
+                          <td className="border border-gray-300 px-4 py-2">{student.course?.name || '-'}</td>
+                          <td className="border border-gray-300 px-4 py-2">{student.disciplines_count ?? 0}</td>
                           <td className="border border-gray-300 px-4 py-2">
                             <span className={student.is_active ? 'text-green-600' : 'text-red-600'}>
                               {student.is_active ? 'Ativo' : 'Inativo'}
@@ -641,6 +900,7 @@ export default function AdminDashboard() {
                                     username: student.username,
                                     email: student.email || '',
                                     ra_number: student.ra_number || '',
+                                    course_id: student.course?.id,
                                   });
                                 }}
                                 variant="outline"
@@ -664,104 +924,164 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-                {selectedStudentId && (
-                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Editar Estudante</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <Input
-                        placeholder="Username"
-                        value={editingStudent.username || ''}
-                        onChange={(e) => setEditingStudent({...editingStudent, username: e.target.value})}
-                      />
-                      <Input
-                        placeholder="Email"
-                        type="email"
-                        value={editingStudent.email || ''}
-                        onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})}
-                      />
-                      <Input
-                        placeholder="RA"
-                        value={editingStudent.ra_number || ''}
-                        onChange={(e) => setEditingStudent({...editingStudent, ra_number: e.target.value})}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Checkbox
-                        id="student-active"
-                        checked={editingStudent.is_active ?? true}
-                        onCheckedChange={(checked) => setEditingStudent({...editingStudent, is_active: !!checked})}
-                      />
-                      <label htmlFor="student-active" className="text-sm font-medium">
-                        Ativo
-                      </label>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button onClick={() => handleUpdateStudent(selectedStudentId)}>Salvar</Button>
-                      <Button variant="outline" onClick={() => { setSelectedStudentId(null); setEditingStudent({}); }}>Cancelar</Button>
-                    </div>
-                  </div>
-                )}
-                {selectedStudentForDisciplines && (
-                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Estudante</h4>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h5 className="font-medium">Disciplinas Atuais:</h5>
-                        {students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.length ? (
-                          <ul className="space-y-1">
-                            {students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.map((discipline) => (
-                              <li key={discipline.id} className="flex justify-between items-center p-2 border rounded">
-                                <span>{discipline.name}</span>
-                                <Button
-                                  onClick={() => handleRemoveDisciplineFromStudent(selectedStudentForDisciplines, discipline.id)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  Remover
-                                </Button>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Select
-                          value={selectedAddDisciplineStudent[selectedStudentForDisciplines] || ""}
-                          onValueChange={(value) => setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: value})}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione uma disciplina para adicionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {disciplines
-                              .filter(d => !students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.some(sd => sd.id === d.id))
-                              .map((discipline) => (
-                                <SelectItem key={discipline.id} value={discipline.id.toString()}>
-                                  {discipline.name}
+                    {selectedStudentId && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Editar Estudante</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <Input
+                            placeholder="Username"
+                            value={editingStudent.username || ''}
+                            onChange={(e) => setEditingStudent({...editingStudent, username: e.target.value})}
+                          />
+                          <Input
+                            placeholder="Email"
+                            type="email"
+                            value={editingStudent.email || ''}
+                            onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})}
+                          />
+                          <Input
+                            placeholder="RA"
+                            value={editingStudent.ra_number || ''}
+                            onChange={(e) => setEditingStudent({...editingStudent, ra_number: e.target.value})}
+                          />
+                          <Select
+                            value={editingStudent.course_id?.toString() || ""}
+                            onValueChange={(value) => {
+                              setEditingStudent({...editingStudent, course_id: parseInt(value)});
+                            }}
+                          >
+                            <SelectTrigger className="col-span-1">
+                              <SelectValue placeholder="Selecione um curso" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {courses.map((course) => (
+                                <SelectItem key={course.id} value={course.id.toString()}>
+                                  {course.name}
                                 </SelectItem>
                               ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          onClick={() => {
-                            const disciplineId = parseInt(selectedAddDisciplineStudent[selectedStudentForDisciplines]);
-                            if (disciplineId) {
-                              handleAddDisciplineToStudent(selectedStudentForDisciplines, disciplineId);
-                              setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: ""});
-                            }
-                          }}
-                        >
-                          Adicionar
-                        </Button>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Checkbox
+                            id="student-active"
+                            checked={editingStudent.is_active ?? true}
+                            onCheckedChange={(checked) => setEditingStudent({...editingStudent, is_active: !!checked})}
+                          />
+                          <label htmlFor="student-active" className="text-sm font-medium">
+                            Ativo
+                          </label>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Button onClick={() => handleUpdateStudent(selectedStudentId)}>Salvar</Button>
+                          <Button variant="outline" onClick={() => { setSelectedStudentId(null); setEditingStudent({}); }}>Cancelar</Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button variant="outline" onClick={() => setSelectedStudentForDisciplines(null)}>Fechar</Button>
-                    </div>
-                  </div>
-                )}
+                    )}
+                    {selectedStudentForDisciplines && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Estudante</h4>
+                        <div className="space-y-4">
+                        <div className="overflow-x-auto">
+{(() => {
+  const student = students.find(s => s.id === selectedStudentForDisciplines);
+  console.log('Render Student Disciplines:', student?.disciplines);
+  if (student?.disciplines && student.disciplines.length > 0) {
+    return (
+      <>
+      <table className="w-full border-collapse border border-gray-300">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border border-gray-300 px-4 py-2">ID</th>
+            <th className="border border-gray-300 px-4 py-2">Disciplina</th>
+            <th className="border border-gray-300 px-4 py-2">Status</th>
+            <th className="border border-gray-300 px-4 py-2">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {student.disciplines.map((discipline: Discipline) => {
+            const currentStatus = discipline.status || 'pendente';
+            return (
+              <tr key={discipline.id}>
+                <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
+                <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                <td className="border border-gray-300 px-4 py-2">
+                  <select
+                    value={currentStatus}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value;
+                      try {
+                        await updateStudentDisciplineStatus(selectedStudentForDisciplines!, discipline.id, newStatus);
+                        fetchAllData();
+                      } catch (error) {
+                        console.error('Erro ao atualizar status da disciplina:', error);
+                        alert('Erro ao atualizar status da disciplina. Tente novamente.');
+                      }
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value="pendente">Pendente</option>
+                    <option value="cursando">Cursando</option>
+                    <option value="concluido">Concluído</option>
+                  </select>
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  <Button
+                    onClick={() => handleRemoveDisciplineFromStudent(selectedStudentForDisciplines!, discipline.id)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Remover
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      </>
+    );
+  } else {
+    return <p className="text-gray-500">Nenhuma disciplina atribuída.</p>;
+  }
+})()}
+                          </div>
+                          <div className="flex gap-2">
+                            <Select
+                              value={selectedAddDisciplineStudent[selectedStudentForDisciplines] || ""}
+                              onValueChange={(value) => setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: value})}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {disciplines
+                                  .filter(d => !students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.some(sd => sd.id === d.id))
+                                  .map((discipline) => (
+                                    <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                      {discipline.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              onClick={() => {
+                                const disciplineId = parseInt(selectedAddDisciplineStudent[selectedStudentForDisciplines]);
+                                if (disciplineId) {
+                                  handleAddDisciplineToStudent(selectedStudentForDisciplines, disciplineId);
+                                  setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: ""});
+                                }
+                              }}
+                            >
+                              Adicionar
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button variant="outline" onClick={() => setSelectedStudentForDisciplines(null)}>Fechar</Button>
+                        </div>
+                      </div>
+                    )}
               </div>
             </TabsContent>
 
@@ -800,10 +1120,10 @@ export default function AdminDashboard() {
                         <th className="border border-gray-300 px-4 py-2">ID</th>
                         <th className="border border-gray-300 px-4 py-2">Username</th>
                         <th className="border border-gray-300 px-4 py-2">Email</th>
-                        <th className="border border-gray-300 px-4 py-2">Funcionário</th>
-                        <th className="border border-gray-300 px-4 py-2">Status</th>
-                        <th className="border border-gray-300 px-4 py-2">Ações</th>
-                      </tr>
+                    <th className="border border-gray-300 px-4 py-2">Funcionário</th>
+                    <th className="border border-gray-300 px-4 py-2">Status</th>
+                    <th className="border border-gray-300 px-4 py-2">Ações</th>
+                  </tr>
                     </thead>
                     <tbody>
                       {teachers.map((teacher) => (
@@ -866,7 +1186,7 @@ export default function AdminDashboard() {
                         onChange={(e) => setEditingTeacher({...editingTeacher, email: e.target.value})}
                       />
                       <Input
-                        placeholder="Funcionário"
+                        placeholder="Funcion├írio"
                         value={editingTeacher.employee_number || ''}
                         onChange={(e) => setEditingTeacher({...editingTeacher, employee_number: e.target.value})}
                       />
@@ -887,70 +1207,80 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
-                {selectedTeacherForDisciplines && (
-                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Professor</h4>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h5 className="font-medium">Disciplinas Atuais:</h5>
-                        {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.length ? (
-                          <ul className="space-y-1">
-                            {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.map((discipline) => (
-                              <li key={discipline.id} className="flex justify-between items-center p-2 border rounded">
-                                <span>{discipline.name}</span>
-                                <Button
-                                  onClick={() => handleRemoveDisciplineFromTeacher(selectedTeacherForDisciplines, discipline.id)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  Remover
-                                </Button>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
-                        )}
+                  {selectedTeacherForDisciplines && (
+                    <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                      <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Professor</h4>
+                      <div className="space-y-4">
+                        <div className="overflow-x-auto">
+                          {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.length ? (
+                            <table className="w-full border-collapse border border-gray-300">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="border border-gray-300 px-4 py-2">ID</th>
+                                  <th className="border border-gray-300 px-4 py-2">Disciplina</th>
+                                  <th className="border border-gray-300 px-4 py-2">Ações</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.map((discipline) => (
+                                  <tr key={discipline.id}>
+                                    <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                                    <td className="border border-gray-300 px-4 py-2">
+                                      <Button
+                                        onClick={() => handleRemoveDisciplineFromTeacher(selectedTeacherForDisciplines, discipline.id)}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        Remover
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Select
+                            value={selectedAddDisciplineTeacher[selectedTeacherForDisciplines] || ""}
+                            onValueChange={(value) => setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: value})}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {disciplines
+                                .filter(d => !teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.some(td => td.id === d.id))
+                                .map((discipline) => (
+                                  <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                    {discipline.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            onClick={() => {
+                              const disciplineId = parseInt(selectedAddDisciplineTeacher[selectedTeacherForDisciplines]);
+                              if (disciplineId) {
+                                handleAddDisciplineToTeacher(selectedTeacherForDisciplines, disciplineId);
+                                setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: ""});
+                              }
+                            }}
+                          >
+                            Adicionar
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Select
-                          value={selectedAddDisciplineTeacher[selectedTeacherForDisciplines] || ""}
-                          onValueChange={(value) => setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: value})}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione uma disciplina para adicionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {disciplines
-                              .filter(d => !teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.some(td => td.id === d.id))
-                              .map((discipline) => (
-                                <SelectItem key={discipline.id} value={discipline.id.toString()}>
-                                  {discipline.name}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          onClick={() => {
-                            const disciplineId = parseInt(selectedAddDisciplineTeacher[selectedTeacherForDisciplines]);
-                            if (disciplineId) {
-                              handleAddDisciplineToTeacher(selectedTeacherForDisciplines, disciplineId);
-                              setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: ""});
-                            }
-                          }}
-                        >
-                          Adicionar
-                        </Button>
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" onClick={() => setSelectedTeacherForDisciplines(null)}>Fechar</Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button variant="outline" onClick={() => setSelectedTeacherForDisciplines(null)}>Fechar</Button>
-                    </div>
-                  </div>
-                )}
+                  )}
               </div>
             </TabsContent>
-
           </Tabs>
         </div>
       </main>

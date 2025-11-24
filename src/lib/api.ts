@@ -1,5 +1,4 @@
-const API_BASE = import.meta.env.DEV ? ' ' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
-//const API_BASE = 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
+const API_BASE = import.meta.env.DEV ? '' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
 
 export interface Course {
   id: number;
@@ -11,6 +10,7 @@ export interface Discipline {
   name: string;
   course_ids: number[];
   prerequisites: number[];
+  status?: string;
 }
 
 export interface Teacher {
@@ -20,6 +20,7 @@ export interface Teacher {
   is_active: boolean;
   employee_number?: string;
   disciplines: Discipline[];
+  disciplines_count?: number;
 }
 
 export interface Student {
@@ -29,6 +30,9 @@ export interface Student {
   is_active: boolean;
   ra_number?: string;
   disciplines: Discipline[];
+  course_id?: number;
+  course?: Course;
+  disciplines_count?: number;
 }
 
 export interface UserPublic {
@@ -87,6 +91,8 @@ export interface StudentUpdateRequest {
   email?: string;
   ra_number?: string;
   is_active?: boolean;
+  password?: string;
+  course_id?: number;
 }
 
 export interface TeacherCreateRequest {
@@ -102,6 +108,7 @@ export interface TeacherUpdateRequest {
   email?: string;
   employee_number?: string;
   is_active?: boolean;
+  password?: string;
 }
 
 // Helper function to get auth headers
@@ -235,7 +242,9 @@ export async function addDisciplineToTeacher(teacherId: number, disciplineId: nu
     body: JSON.stringify({}), // API expects PATCH with empty body
   });
   if (!response.ok) {
-    throw new Error('Failed to add discipline to teacher');
+    const errorText = await response.text();
+    console.error(`Failed to add discipline to teacher. Status: ${response.status}, Response: ${errorText}`);
+    throw new Error(`Failed to add discipline to teacher: ${response.status} ${errorText}`);
   }
   return response.json();
 }
@@ -374,4 +383,114 @@ export async function createTeacher(teacherData: TeacherCreateRequest): Promise<
 export function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+}
+
+// Interfaces for Curriculum Schedule
+export interface CurriculumSchedule {
+  id: number;
+  name: string;
+  course_id: number;
+  disciplines: Discipline[];
+}
+
+export interface CurriculumScheduleCreateRequest {
+  name: string;
+  course_id: number;
+  discipline_ids: number[];
+}
+
+// API function to create a curriculum schedule
+export async function createCurriculumSchedule(data: CurriculumScheduleCreateRequest): Promise<CurriculumSchedule> {
+  const response = await fetch(`${API_BASE}/api/v1/curriculum-schedules/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create curriculum schedule');
+  }
+  return response.json();
+}
+
+// Add a prerequisite to a discipline
+export async function addPrerequisiteToDiscipline(disciplineId: number, prerequisiteId: number): Promise<Discipline> {
+  const response = await fetch(`${API_BASE}/api/v1/disciplines/${disciplineId}/prerequisites/${prerequisiteId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to add prerequisite to discipline');
+  }
+  return response.json();
+}
+
+// Add discipline to a course
+export async function addCourseToDiscipline(disciplineId: number, courseId: number): Promise<Discipline> {
+  const response = await fetch(`${API_BASE}/api/v1/disciplines/${disciplineId}/courses/${courseId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to add course to discipline');
+  }
+  return response.json();
+}
+
+// Remove discipline from a course
+export async function removeCourseFromDiscipline(disciplineId: number, courseId: number): Promise<Discipline> {
+  const response = await fetch(`${API_BASE}/api/v1/disciplines/${disciplineId}/courses/${courseId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to remove course from discipline');
+  }
+  return response.json();
+}
+
+// API function to assign a curriculum schedule to a student
+export async function assignCurriculumScheduleToStudent(studentId: number, curriculumScheduleId: number): Promise<Student> {
+  const response = await fetch(`${API_BASE}/api/v1/students/${studentId}/assign-curriculum/${curriculumScheduleId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to assign curriculum schedule to student');
+  }
+  return response.json();
+}
+
+// API function to update the status of a discipline for a student
+export async function updateStudentDisciplineStatus(studentId: number, disciplineId: number, status: string): Promise<Student> {
+  const response = await fetch(`${API_BASE}/api/v1/students/${studentId}/disciplines/${disciplineId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update student discipline status');
+  }
+  return response.json();
+}
+
+// API function to change student's course without modifying disciplines
+export async function changeStudentCourse(studentId: number, newCourseId: number): Promise<Student> {
+  const response = await fetch(`${API_BASE}/api/v1/students/${studentId}/change-course/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ course_id: newCourseId }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to change student course');
+  }
+  return response.json();
 }

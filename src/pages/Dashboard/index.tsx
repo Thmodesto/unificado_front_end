@@ -18,6 +18,7 @@ interface Discipline {
   name: string;
   course_ids: number[];
   prerequisites: number[];
+  status?: string; // Added optional status field to reflect backend change
 }
 
 interface Subject {
@@ -88,27 +89,30 @@ export default function Dashboard() {
     );
   }
 
-  // Simular status das disciplinas baseado em dados mockados (já que a API não tem status)
-  const getMockStatus = (discipline: Discipline): string => {
-    // Simulação simples: algumas concluídas, algumas em andamento, outras pendentes
-    const statuses = ['Concluída', 'Em Andamento', 'Pendente'];
-    return statuses[discipline.id % 3];
-  };
-
+  // Use real status from student discipline data
   const subjects: Subject[] = student.disciplines.map(discipline => ({
     name: discipline.name,
-    status: getMockStatus(discipline),
+    status: discipline.status || 'Pendente', // Use status from API or fallback
     dependencies: discipline.prerequisites.map(depId => {
       const depDiscipline = disciplines.find(d => d.id === depId);
       return depDiscipline ? depDiscipline.name : 'Disciplina não encontrada';
     }),
   }));
 
-  // Agrupar as matérias por status
+  // Mapping API discipline statuses to display status labels
+  const apiStatusToDisplayStatus: Record<string, string> = {
+    'pendente': 'Pendente',
+    'cursando': 'Em Andamento',
+    'concluido': 'Concluída',
+  };
+
+  // Group subjects by display status, mapping from API status
   const statusOrder = ['Em Andamento', 'Pendente', 'Concluída'];
   const groupedSubjects = subjects.reduce((acc, subject) => {
-    if (!acc[subject.status]) acc[subject.status] = [];
-    acc[subject.status].push(subject);
+    // Map subject.status from API value to display label if mapping exists
+    const displayStatus = apiStatusToDisplayStatus[subject.status.toLowerCase()] || subject.status;
+    if (!acc[displayStatus]) acc[displayStatus] = [];
+    acc[displayStatus].push(subject);
     return acc;
   }, {} as Record<string, Subject[]>);
 
