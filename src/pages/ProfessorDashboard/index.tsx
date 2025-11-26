@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { getTeacher, getDisciplines, logout } from "@/lib/api";
+import { getTeacher, getDisciplines, getCourses, logout } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 interface Professor {
@@ -30,6 +30,7 @@ export default function ProfessorDashboard() {
 
   const [professor, setProfessor] = useState<Professor | null>(null);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +40,16 @@ export default function ProfessorDashboard() {
         // Obter ID do professor do localStorage
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const professorId = user.id || 1; // fallback para demonstração
-        const [professorData, disciplinesData] = await Promise.all([
+        const [professorData, disciplinesData, coursesData] = await Promise.all([
           getTeacher(professorId),
-          getDisciplines()
+          getDisciplines(),
+          getCourses()
         ]);
         setProfessor(professorData);
         setDisciplines(disciplinesData);
+        setCourses(coursesData);
+        console.log('Courses data:', coursesData);
+        console.log('Professor disciplines:', professorData.disciplines);
       } catch (err) {
         setError('Erro ao carregar dados');
         console.error(err);
@@ -101,7 +106,7 @@ export default function ProfessorDashboard() {
       <section className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h2 className="text-xl font-semibold text-[#2D2785]">Nome: {professor.username}</h2>
+            <h2 className="text-xl font-semibold text-[#2D2785]">Usuário: {professor.username}</h2>
             <p className="text-gray-700">ID de Funcionário: {professor.employee_number || 'Não informado'}</p>
           </div>
           <div className="mt-4 md:mt-0 bg-[#FFDD00] text-[#2D2785] px-4 py-2 rounded-full font-semibold shadow">
@@ -129,7 +134,7 @@ export default function ProfessorDashboard() {
                     <div className="flex items-center justify-between w-full">
                       <span className="text-[#2D2785]">{subject.name}</span>
                       <span className="text-gray-600 text-sm">
-                        Cursos: {subject.course_ids.join(', ')}
+                        Cursos: {subject.course_ids.map(id => courses.find(c => c.id === id)?.name || id).join(', ')}
                       </span>
                     </div>
                   </AccordionTrigger>
@@ -137,7 +142,7 @@ export default function ProfessorDashboard() {
                   <AccordionContent className="bg-white px-6 py-4 rounded-b-2xl border-t border-gray-100">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className="text-gray-800"><strong>Curso IDs:</strong> {subject.course_ids.join(', ')}</p>
+                        <p className="text-gray-800"><strong>Cursos:</strong> {subject.course_ids.map(id => courses.find(c => c.id === id)?.name || id).join(', ')}</p>
                         <p className="text-gray-800"><strong>Semestre:</strong> 2025.2</p>
                       </div>
                       <Accordion type="single" collapsible className="w-full">

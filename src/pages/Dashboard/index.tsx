@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { getStudent, getDisciplines, logout } from "@/lib/api";
+import { getStudent, getDisciplines, getCourses, logout } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 interface Student {
@@ -11,6 +11,7 @@ interface Student {
   is_active: boolean;
   ra_number?: string;
   disciplines: Discipline[];
+  course?: { id: number; name: string };
 }
 
 interface Discipline {
@@ -37,6 +38,7 @@ export default function Dashboard() {
 
   const [student, setStudent] = useState<Student | null>(null);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +48,14 @@ export default function Dashboard() {
         // Obter ID do estudante do localStorage
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const studentId = user.id || 1; // fallback para demonstração
-        const [studentData, disciplinesData] = await Promise.all([
+        const [studentData, disciplinesData, coursesData] = await Promise.all([
           getStudent(studentId),
-          getDisciplines()
+          getDisciplines(),
+          getCourses()
         ]);
         setStudent(studentData);
         setDisciplines(disciplinesData);
+        setCourses(coursesData);
       } catch (err) {
         setError('Erro ao carregar dados');
         console.error(err);
@@ -119,13 +123,13 @@ export default function Dashboard() {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'Concluída':
-        return { color: 'text-green-600', icon: '🟢' };
+        return { color: 'text-green-600', bgColor: 'bg-green-600', icon: '🟢' };
       case 'Em Andamento':
-        return { color: 'text-yellow-500', icon: '🟡' };
+        return { color: 'text-yellow-500', bgColor: 'bg-yellow-500', icon: '🟡' };
       case 'Pendente':
-        return { color: 'text-red-600', icon: '🔴' };
+        return { color: 'text-red-600', bgColor: 'bg-red-600', icon: '🔴' };
       default:
-        return { color: 'text-gray-500', icon: '⚪' };
+        return { color: 'text-gray-500', bgColor: 'bg-gray-500', icon: '⚪' };
     }
   };
 
@@ -143,8 +147,12 @@ export default function Dashboard() {
       <section className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h2 className="text-xl font-semibold text-[#2D2785]">Nome: {student.username}</h2>
-            <p className="text-gray-700">Curso: ID {student.disciplines[0] ? student.disciplines[0].course_ids[0] : 'Não informado'}</p>
+            <h2 className="text-xl font-semibold text-[#2D2785]">Usuário: {student.username}</h2>
+            <p className="text-gray-700">Curso: {student.course?.name || (() => {
+              const courseId = student.disciplines[0]?.course_ids[0];
+              const course = courses.find(c => c.id === courseId);
+              return course ? course.name : 'Não informado';
+            })()}</p>
             <p className="text-gray-500">RA: {student.ra_number || 'Não informado'}</p>
           </div>
           <div className="mt-4 md:mt-0 bg-[#FFDD00] text-[#2D2785] px-4 py-2 rounded-full font-semibold shadow">
@@ -183,7 +191,7 @@ export default function Dashboard() {
                   <AccordionContent className="bg-white px-6 py-4 rounded-b-2xl border-t border-gray-100">
                     <Accordion type="single" collapsible className="w-full">
                       {subjectsInStatus.map((subject, index) => {
-                        const subjStatusInfo = getStatusInfo(subject.status);
+                        const subjStatusInfo = getStatusInfo(status);
                         return (
                           <AccordionItem
                             key={index}
@@ -193,9 +201,7 @@ export default function Dashboard() {
                             <AccordionTrigger className="px-4 py-2 font-medium text-[#2D2785]">
                               <div className="flex items-center justify-between w-full">
                                 <span>{subject.name}</span>
-                                <span className={`flex items-center gap-2 ${subjStatusInfo.color} text-sm`}>
-                                  {subjStatusInfo.icon}
-                                </span>
+                                <span className={`inline-block w-3 h-3 rounded-full ${subjStatusInfo.bgColor}`}></span>
                               </div>
                             </AccordionTrigger>
 
