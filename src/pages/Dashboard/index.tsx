@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { getStudent, getDisciplines, getCourses, logout } from "@/lib/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getStudent, getDisciplines, getCourses, logout, getDisciplineRecommendations } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 interface Student {
@@ -22,11 +23,19 @@ interface Discipline {
   status?: string; // Added optional status field to reflect backend change
 }
 
+interface DisciplineRecommendation {
+  id: number;
+  name: string;
+  prereqs: number[];
+}
+
 interface Subject {
   name: string;
   status: string;
   dependencies: string[];
 }
+
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -39,8 +48,10 @@ export default function Dashboard() {
   const [student, setStudent] = useState<Student | null>(null);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<DisciplineRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +67,15 @@ export default function Dashboard() {
         setStudent(studentData);
         setDisciplines(disciplinesData);
         setCourses(coursesData);
+
+        // Try to fetch recommendations, but don't fail if the endpoint is not available
+        try {
+          const recsData = await getDisciplineRecommendations(studentId);
+          setRecommendations(recsData);
+        } catch (recsErr) {
+          console.warn('Recommendations API not available:', recsErr);
+          setRecommendations([]); // Set empty array if API fails
+        }
       } catch (err) {
         setError('Erro ao carregar dados');
         console.error(err);
@@ -161,71 +181,109 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Dashboard Body - Accordion centralizado */}
+      {/* Dashboard Body - Tabs */}
       <main className="flex-1 flex justify-center items-start py-10 px-4">
-        <div className="w-full max-w-3xl">
-          <h3 className="text-2xl font-bold text-center text-[#2D2785] mb-6">Disciplinas</h3>
+        <div className="w-full max-w-4xl">
+          <Tabs defaultValue="disciplinas" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="disciplinas">Disciplinas</TabsTrigger>
+              <TabsTrigger value="insights">Insights de Grafo</TabsTrigger>
+            </TabsList>
+            <TabsContent value="disciplinas" className="mt-6">
+              <h3 className="text-2xl font-bold text-center text-[#2D2785] mb-6">Disciplinas</h3>
 
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            {statusOrder.map((status) => {
-              const subjectsInStatus = groupedSubjects[status] || [];
-              const statusInfo = getStatusInfo(status);
-              return (
-                <AccordionItem
-                  key={status}
-                  value={status}
-                  className="border border-gray-200 rounded-2xl shadow-sm"
-                >
-                  <AccordionTrigger className="bg-gray-50 px-6 py-4 rounded-2xl font-semibold text-[#2D2785] hover:bg-[white]/10 transition-all">
-                    <div className="flex items-center justify-between w-full">
-                      <span className={`flex items-center gap-1 ${statusInfo.color} text-base font-semibold`}>
-                        {statusInfo.icon}
-                        <span className="text-[#2D2785]">{status}</span>
-                      </span>
-                      <span className={`flex items-center gap-2 ${statusInfo.color} text-sm font-medium`}>
-                        ({subjectsInStatus.length})
-                      </span>
-                    </div>
-                  </AccordionTrigger>
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                {statusOrder.map((status) => {
+                  const subjectsInStatus = groupedSubjects[status] || [];
+                  const statusInfo = getStatusInfo(status);
+                  return (
+                    <AccordionItem
+                      key={status}
+                      value={status}
+                      className="border border-gray-200 rounded-2xl shadow-sm"
+                    >
+                      <AccordionTrigger className="bg-gray-50 px-6 py-4 rounded-2xl font-semibold text-[#2D2785] hover:bg-[white]/10 transition-all">
+                        <div className="flex items-center justify-between w-full">
+                          <span className={`flex items-center gap-1 ${statusInfo.color} text-base font-semibold`}>
+                            {statusInfo.icon}
+                            <span className="text-[#2D2785]">{status}</span>
+                          </span>
+                          <span className={`flex items-center gap-2 ${statusInfo.color} text-sm font-medium`}>
+                            ({subjectsInStatus.length})
+                          </span>
+                        </div>
+                      </AccordionTrigger>
 
-                  <AccordionContent className="bg-white px-6 py-4 rounded-b-2xl border-t border-gray-100">
-                    <Accordion type="single" collapsible className="w-full">
-                      {subjectsInStatus.map((subject, index) => {
-                        const subjStatusInfo = getStatusInfo(status);
+                      <AccordionContent className="bg-white px-6 py-4 rounded-b-2xl border-t border-gray-100">
+                        <Accordion type="single" collapsible className="w-full">
+                          {subjectsInStatus.map((subject, index) => {
+                            const subjStatusInfo = getStatusInfo(status);
+                            return (
+                              <AccordionItem
+                                key={index}
+                                value={`subject-${status}-${index}`}
+                                className="border border-gray-100 rounded-lg mb-2"
+                              >
+                                <AccordionTrigger className="px-4 py-2 font-medium text-[#2D2785]">
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{subject.name}</span>
+                                    <span className={`inline-block w-3 h-3 rounded-full ${subjStatusInfo.bgColor}`}></span>
+                                  </div>
+                                </AccordionTrigger>
+
+                                <AccordionContent className="px-4 py-2">
+                                  <h4 className="text-lg font-semibold text-[#2D2785] mb-2">Dependências:</h4>
+                                  {subject.dependencies.length > 0 ? (
+                                    <ul className="list-disc list-inside space-y-1 text-gray-800">
+                                      {subject.dependencies.map((dep, i) => (
+                                        <li key={i}>{dep}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-gray-500">Nenhuma dependência registrada.</p>
+                                  )}
+                                </AccordionContent>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            </TabsContent>
+            <TabsContent value="insights" className="mt-6">
+              <h3 className="text-2xl font-bold text-center text-[#2D2785] mb-6">Insights de Grafo</h3>
+
+              <div className="space-y-6">
+                {/* Recommendations */}
+                {recommendations && recommendations.length > 0 ? (
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <h4 className="text-xl font-semibold text-[#2D2785] mb-4">Disciplinas Recomendadas</h4>
+                    <ul className="space-y-2">
+                      {recommendations.map((rec) => {
+                        const prereqNames = rec.prereqs.map(prereqId => {
+                          const discipline = disciplines.find(d => d.id === prereqId);
+                          return discipline ? discipline.name : `ID: ${prereqId}`;
+                        });
                         return (
-                          <AccordionItem
-                            key={index}
-                            value={`subject-${status}-${index}`}
-                            className="border border-gray-100 rounded-lg mb-2"
-                          >
-                            <AccordionTrigger className="px-4 py-2 font-medium text-[#2D2785]">
-                              <div className="flex items-center justify-between w-full">
-                                <span>{subject.name}</span>
-                                <span className={`inline-block w-3 h-3 rounded-full ${subjStatusInfo.bgColor}`}></span>
-                              </div>
-                            </AccordionTrigger>
-
-                            <AccordionContent className="px-4 py-2">
-                              <h4 className="text-lg font-semibold text-[#2D2785] mb-2">Dependências:</h4>
-                              {subject.dependencies.length > 0 ? (
-                                <ul className="list-disc list-inside space-y-1 text-gray-800">
-                                  {subject.dependencies.map((dep, i) => (
-                                    <li key={i}>{dep}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-gray-500">Nenhuma dependência registrada.</p>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
+                          <li key={rec.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="font-medium text-[#2D2785]">{rec.name}</span>
+                            <span className="text-sm text-gray-600">Pré-requisitos: {prereqNames.join(', ')}</span>
+                          </li>
                         );
                       })}
-                    </Accordion>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center">
+                    <p className="text-gray-500">Nenhuma recomendação disponível no momento.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

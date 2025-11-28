@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.DEV ? '' : 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
+const API_BASE = 'https://fp4pagmp8f.us-east-1.awsapprunner.com';
 
 export interface Course {
   id: number;
@@ -83,6 +83,8 @@ export interface StudentCreateRequest {
   email?: string;
   password: string;
   ra_number?: string;
+  assign_course_curriculum: boolean;
+  course_id: number;
   disciplines?: number[];
 }
 
@@ -491,6 +493,84 @@ export async function changeStudentCourse(studentId: number, newCourseId: number
   });
   if (!response.ok) {
     throw new Error('Failed to change student course');
+  }
+  return response.json();
+}
+
+// Graph Insights API functions
+export interface GraphNode {
+  id: number;
+  name: string;
+}
+
+export interface GraphEdge {
+  source: number;
+  target: number;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphEdge[];
+}
+
+export interface StudentProgress {
+  positions: Record<number, [number, number]>;
+  statuses: Record<number, string>;
+  labels: Record<number, string>;
+}
+
+export interface DisciplineRecommendation {
+  id: number;
+  name: string;
+  prereqs: number[];
+}
+
+export interface GraduationPath {
+  path: number[];
+}
+
+export async function getStudentProgress(userId: number): Promise<StudentProgress> {
+  const response = await fetch(`${API_BASE}/api/v1/admin/insights/progress/${userId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch student progress');
+  }
+  return response.json();
+}
+
+export async function getDisciplineRecommendations(userId: number): Promise<DisciplineRecommendation[]> {
+  const response = await fetch(`${API_BASE}/api/v1/insights/recommendations/${userId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch discipline recommendations');
+  }
+  const data = await response.json();
+  return data.recommendations || [];
+}
+
+export async function getGraduationPath(userId: number, requiredIds: number[]): Promise<GraduationPath> {
+  const response = await fetch(`${API_BASE}/api/v1/admin/insights/graduation-path/${userId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ required_ids: requiredIds }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch graduation path');
+  }
+  return response.json();
+}
+
+export async function getGraphData(): Promise<GraphData> {
+  const response = await fetch(`${API_BASE}/api/v1/admin/insights/graph`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch graph data');
   }
   return response.json();
 }

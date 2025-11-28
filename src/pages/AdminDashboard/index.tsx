@@ -62,7 +62,7 @@ export default function AdminDashboard() {
   // State for forms
   const [newCourseName, setNewCourseName] = useState("");
   const [newDiscipline, setNewDiscipline] = useState({ name: "", course_ids: [] as number[], prerequisites: [] as number[] });
-  const [newStudent, setNewStudent] = useState<StudentCreateRequest>({ username: "", password: "" });
+  const [newStudent, setNewStudent] = useState<StudentCreateRequest>({ username: "", email: "", password: "", ra_number: "", assign_course_curriculum: true, course_id: 0 });
   const [newTeacher, setNewTeacher] = useState<TeacherCreateRequest>({ username: "", password: "" });
   const [editingStudent, setEditingStudent] = useState<StudentUpdateRequest>({} as StudentUpdateRequest);
   const [editingTeacher, setEditingTeacher] = useState<TeacherUpdateRequest>({} as TeacherUpdateRequest);
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
     if (!newStudent.username || !newStudent.password) return;
     try {
       await createStudent(newStudent);
-      setNewStudent({ username: "", password: "" });
+      setNewStudent({ username: "", email: "", password: "", ra_number: "", assign_course_curriculum: true, course_id: 0 });
       fetchAllData();
     } catch (err) {
       console.error('Erro ao criar estudante:', err);
@@ -318,7 +318,7 @@ const handleCreateTeacher = async () => {
       await toggleUserActive(userId);
       fetchAllData();
     } catch (err) {
-      console.error('Erro ao alterar status do usu├írio:', err);
+      console.error('Erro ao alterar status do usuário:', err);
     }
   };
 
@@ -480,13 +480,17 @@ const handleCreateTeacher = async () => {
                             </span>
                           </td>
                           <td className="border border-gray-300 px-4 py-2">
-                            <Button
-                              onClick={() => handleToggleUserActive(user.id)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              {user.is_active ? 'Desativar' : 'Ativar'}
-                            </Button>
+                            {user.role !== 'admin' ? (
+                              <Button
+                                onClick={() => handleToggleUserActive(user.id)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                {user.is_active ? 'Desativar' : 'Ativar'}
+                              </Button>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -659,12 +663,14 @@ const handleCreateTeacher = async () => {
                     <td className="border border-gray-300 px-4 py-2">
                       <div className="flex flex-col gap-2">
                         <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => startEditingCourses(discipline.id, discipline.course_ids)}
                         >
                           Editar Curso
                         </Button>
                         <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => startEditingPrerequisites(discipline.id, discipline.prerequisites)}
                         >
@@ -745,7 +751,7 @@ const handleCreateTeacher = async () => {
             {/* Gerenciar Estudantes */}
             <TabsContent value="students" className="mt-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
                   <Input
                     placeholder="Username"
                     value={newStudent.username}
@@ -768,6 +774,31 @@ const handleCreateTeacher = async () => {
                     value={newStudent.password}
                     onChange={(e) => setNewStudent({...newStudent, password: e.target.value})}
                   />
+                  <Select
+                    value={newStudent.course_id ? newStudent.course_id.toString() : ""}
+                    onValueChange={(value) => setNewStudent({...newStudent, course_id: value ? parseInt(value) : 0})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Curso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id.toString()}>
+                          {course.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="assign-course-curriculum"
+                      checked={newStudent.assign_course_curriculum}
+                      onCheckedChange={(checked) => setNewStudent({...newStudent, assign_course_curriculum: !!checked})}
+                    />
+                    <label htmlFor="assign-course-curriculum" className="text-sm font-medium">
+                      Atribuir currículo do curso
+                    </label>
+                  </div>
                   <Button onClick={handleCreateStudent}>Criar Estudante</Button>
                 </div>
                 <div className="overflow-x-auto">
@@ -852,13 +883,13 @@ const handleCreateTeacher = async () => {
                             onChange={(e) => setEditingStudent({...editingStudent, ra_number: e.target.value})}
                           />
                           <Select
-                            value={editingStudent.course_id?.toString() || ""}
+                            value={editingStudent.course_id ? editingStudent.course_id.toString() : ""}
                             onValueChange={(value) => {
-                              setEditingStudent({...editingStudent, course_id: parseInt(value)});
+                              setEditingStudent({...editingStudent, course_id: value ? parseInt(value) : undefined});
                             }}
                           >
                             <SelectTrigger className="col-span-1">
-                              <SelectValue placeholder="Selecione um curso" />
+                              <SelectValue placeholder="Curso" />
                             </SelectTrigger>
                             <SelectContent>
                               {courses.map((course) => (
