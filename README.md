@@ -120,7 +120,6 @@ Após a instalação e configuração:
     - `ProfessorDashboard/`: Dashboard para professores.
     - `Dashboard/`: Dashboard geral para alunos.
     - `login/`: Página de autenticação.
-    - `register/`: Página de registro de novos usuários.
   - `lib/`: Utilitários e configurações.
     - `api.ts`: Cliente para integração com a API FastAPI.
     - `utils.ts`: Funções utilitárias para manipulação de classes CSS.

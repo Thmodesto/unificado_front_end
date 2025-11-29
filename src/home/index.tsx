@@ -50,13 +50,6 @@ export default function HomePage() {
                 <LogIn className="size-4" />
                 Entrar
               </Link>
-              <Link
-                to="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-md px-6 py-3 font-bold bg-white border border-gray-300 text-[#2D2785] hover:bg-gray-50 shadow transition"
-              >
-                <UserPlus className="size-4" />
-                Criar conta
-              </Link>
             </div>
             <div className="mt-6 text-xs text-gray-500 flex items-center justify-between">
               <span>© {new Date().getFullYear()} {appName}</span>
