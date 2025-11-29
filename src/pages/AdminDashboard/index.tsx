@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import GraphView from "@/components/GraphView";
 import {
   getAllUsers,
   toggleUserActive,
@@ -1466,6 +1467,7 @@ const handleCreateTeacher = async () => {
                         </div>
                       </div>
                     )}
+                    <GraphView />
                   </TabsContent>
                 </Tabs>
               </div>
