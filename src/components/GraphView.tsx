@@ -38,12 +38,14 @@ export default function GraphView() {
   }
 
   return (
-    <div style={{ width: '100%', height: '600px' }}>
+    <div style={{ width: '100%', aspectRatio: '4/3', background: 'lightgray', height: '80vh', overflow: 'auto' }}>
       <ForceGraph2D
         graphData={graphData}
         nodeLabel={(node: any) => node.name}
         linkDirectionalArrowLength={3.5}
         nodeAutoColorBy="id"
+        linkWidth={2}
+        linkColor="black"
       />
     </div>
   );
