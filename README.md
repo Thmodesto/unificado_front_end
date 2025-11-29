@@ -1,6 +1,6 @@
 # Unificado Front-End
 
-Este é o front-end do projeto Unificado, desenvolvido com React, TypeScript e Vite. Ele fornece uma interface de usuário para gerenciar cursos, disciplinas, professores e alunos, integrando-se com uma API backend desenvolvida em FastAPI.
+Este é o front-end do projeto Unificado, um sistema completo de gestão acadêmica desenvolvido com React, TypeScript e Vite. O sistema oferece dashboards diferenciados para administradores, professores e alunos, com funcionalidades avançadas de visualização de grafos de dependências de disciplinas, recomendações personalizadas, análise de ciclos e métricas de importância. Integra-se com uma API backend desenvolvida em FastAPI para fornecer uma experiência completa de gerenciamento educacional.
 
 ## Pré-requisitos
 
@@ -112,13 +112,27 @@ Após a instalação e configuração:
 ## Estrutura do Projeto
 
 - `src/`: Código fonte principal.
-  - `components/`: Componentes reutilizáveis (UI com Radix e Tailwind).
-  - `pages/`: Páginas da aplicação (Login, Dashboard, etc.).
-  - `lib/`: Utilitários, incluindo `api.ts` para chamadas à API.
-  - `hooks/`: Hooks customizados.
-- `public/`: Assets estáticos.
+  - `components/`: Componentes reutilizáveis.
+    - `ui/`: Componentes de interface baseados em Radix UI e Tailwind CSS (botões, abas, formulários, etc.).
+    - `GraphView.tsx`: Componente de visualização interativa de grafos usando react-force-graph.
+  - `pages/`: Páginas da aplicação.
+    - `AdminDashboard/`: Dashboard administrativo com gerenciamento completo.
+    - `ProfessorDashboard/`: Dashboard para professores.
+    - `Dashboard/`: Dashboard geral para alunos.
+    - `login/`: Página de autenticação.
+    - `register/`: Página de registro de novos usuários.
+  - `lib/`: Utilitários e configurações.
+    - `api.ts`: Cliente para integração com a API FastAPI.
+    - `utils.ts`: Funções utilitárias para manipulação de classes CSS.
+  - `services/`: Serviços específicos.
+    - `graphService.ts`: Serviço para obtenção e processamento de dados de grafos.
+  - `hooks/`: Hooks customizados React.
+    - `use-mobile.ts`: Hook para detecção de dispositivos móveis.
+  - `home/`: Página inicial/landing page.
+- `public/`: Assets estáticos (imagens, ícones).
 - `vite.config.ts`: Configuração do Vite.
 - `tsconfig.json`: Configuração TypeScript.
+- `package.json`: Dependências e scripts do projeto.
 
 ## Contribuição
 
