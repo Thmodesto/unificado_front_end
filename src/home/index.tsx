@@ -2,7 +2,7 @@
 // Também aplica o tema salvo (light/dark) ao carregar a página.
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn } from "lucide-react";
 import logoUrl from "@/assets/Unificadologo.png?url";
 
 export default function HomePage() {
