@@ -525,7 +525,18 @@ export interface DisciplineRecommendation {
   prereqs: number[];
 }
 
+export interface RecommendationsResponse {
+  insight: string;
+  explanation: string;
+  user_id: number;
+  recommendations: DisciplineRecommendation[];
+}
+
 export interface GraduationPath {
+  insight: string;
+  explanation: string;
+  user_id: number;
+  required_ids: number[];
   path: number[];
 }
 
@@ -539,25 +550,19 @@ export async function getStudentProgress(userId: number): Promise<StudentProgres
   return response.json();
 }
 
-export async function getDisciplineRecommendations(userId: number): Promise<DisciplineRecommendation[]> {
+export async function getDisciplineRecommendations(userId: number): Promise<RecommendationsResponse> {
   const response = await fetch(`${API_BASE}/api/v1/insights/recommendations/${userId}`, {
     headers: getAuthHeaders(),
   });
   if (!response.ok) {
     throw new Error('Failed to fetch discipline recommendations');
   }
-  const data = await response.json();
-  return data.recommendations || [];
+  return response.json();
 }
 
-export async function getGraduationPath(userId: number, requiredIds: number[]): Promise<GraduationPath> {
-  const response = await fetch(`${API_BASE}/api/v1/admin/insights/graduation-path/${userId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify({ required_ids: requiredIds }),
+export async function getGraduationPath(userId: number, required: string): Promise<GraduationPath> {
+  const response = await fetch(`${API_BASE}/api/v1/insights/graduation-path/${userId}?required=${encodeURIComponent(required)}`, {
+    headers: getAuthHeaders(),
   });
   if (!response.ok) {
     throw new Error('Failed to fetch graduation path');
@@ -571,6 +576,76 @@ export async function getGraphData(): Promise<GraphData> {
   });
   if (!response.ok) {
     throw new Error('Failed to fetch graph data');
+  }
+  return response.json();
+}
+
+export interface CyclesResponse {
+  insight: string;
+  explanation: string;
+  cycles: number[][];
+  cycles_count: number;
+}
+
+export async function getCycles(): Promise<CyclesResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/insights/cycles`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch cycles');
+  }
+  return response.json();
+}
+
+export interface ImportanceMetric {
+  id: number;
+  name: string;
+  out_degree: number;
+  descendants: number;
+  betweenness: number;
+}
+
+export interface ImportanceResponse {
+  insight: string;
+  explanation: string;
+  metrics: ImportanceMetric[];
+}
+
+export async function getImportance(): Promise<ImportanceResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/insights/importance`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch importance metrics');
+  }
+  return response.json();
+}
+
+export interface GraphNode {
+  id: number;
+  name: string;
+}
+
+export interface GraphEdge {
+  from: number;
+  to: number;
+}
+
+export interface GraphInsightResponse {
+  insight: string;
+  explanation: string;
+  nodes_count: number;
+  nodes: GraphNode[];
+  edges_count: number;
+  edges: GraphEdge[];
+}
+
+export async function getGraphInsight(): Promise<GraphInsightResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/insights/graph`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch graph insight');
   }
   return response.json();
 }

@@ -28,6 +28,11 @@ import {
   removeCourseFromDiscipline,
   addPrerequisiteToDiscipline,
   updateStudentDisciplineStatus,
+  getDisciplineRecommendations,
+  getCycles,
+  getImportance,
+  getGraduationPath,
+  getGraphInsight,
   logout,
 } from "@/lib/api";
 
@@ -42,6 +47,11 @@ import type {
   StudentUpdateRequest,
   TeacherCreateRequest,
   TeacherUpdateRequest,
+  RecommendationsResponse,
+  CyclesResponse,
+  ImportanceResponse,
+  GraduationPath,
+  GraphInsightResponse,
 } from "@/lib/api";
 
 export default function AdminDashboard() {
@@ -58,6 +68,12 @@ export default function AdminDashboard() {
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
+  const [cycles, setCycles] = useState<CyclesResponse | null>(null);
+  const [importance, setImportance] = useState<ImportanceResponse | null>(null);
+  const [graduationPath, setGraduationPath] = useState<GraduationPath | null>(null);
+  const [graphInsight, setGraphInsight] = useState<GraphInsightResponse | null>(null);
+  const [requiredDisciplines, setRequiredDisciplines] = useState("");
 
   // State for forms
   const [newCourseName, setNewCourseName] = useState("");
@@ -179,6 +195,7 @@ export default function AdminDashboard() {
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
 
   const [selectedAddDisciplineTeacher, setSelectedAddDisciplineTeacher] = useState<Record<number, string>>({});
+  const [selectedStudentForInsights, setSelectedStudentForInsights] = useState<number | null>(null);
 
 
 
@@ -434,12 +451,13 @@ const handleCreateTeacher = async () => {
       <main className="flex-1 p-6">
         <div className="max-w-6xl mx-auto">
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-100 border border-gray-300 rounded-lg p-1">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-100 border border-gray-300 rounded-lg p-1">
               <TabsTrigger value="users" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Usuários</TabsTrigger>
               <TabsTrigger value="courses" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Cursos</TabsTrigger>
               <TabsTrigger value="disciplines" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Disciplinas</TabsTrigger>
               <TabsTrigger value="students" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Estudantes</TabsTrigger>
               <TabsTrigger value="teachers" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Professores</TabsTrigger>
+              <TabsTrigger value="insights" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Insights</TabsTrigger>
             </TabsList>
 
             {/* Gerenciar Usu├írios */}
@@ -1217,6 +1235,239 @@ const handleCreateTeacher = async () => {
                       </div>
                     </div>
                   )}
+              </div>
+            </TabsContent>
+
+            {/* Insights */}
+            <TabsContent value="insights" className="mt-6">
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Insights e Recomendações</h3>
+                <Tabs defaultValue="recommendations" className="w-full">
+                  <TabsList className="grid w-full grid-cols-5 bg-gray-100 border border-gray-300 rounded-lg p-1">
+                    <TabsTrigger value="recommendations" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Recomendações</TabsTrigger>
+                    <TabsTrigger value="cycles" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Ciclos</TabsTrigger>
+                    <TabsTrigger value="importance" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Importância</TabsTrigger>
+                    <TabsTrigger value="graduation-path" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Caminho de Graduação</TabsTrigger>
+                    <TabsTrigger value="graph-insight" className="data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-700">Insight do Grafo</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="recommendations" className="mt-4">
+                    <div className="flex gap-2">
+                      <Select
+                        value={selectedStudentForInsights ? selectedStudentForInsights.toString() : ""}
+                        onValueChange={(value) => setSelectedStudentForInsights(value ? parseInt(value) : null)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione um estudante para recomendações" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {students.map((student) => (
+                            <SelectItem key={student.id} value={student.id.toString()}>
+                              {student.username} ({student.ra_number || 'Sem RA'})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={async () => {
+                          if (selectedStudentForInsights) {
+                            try {
+                              const recs = await getDisciplineRecommendations(selectedStudentForInsights);
+                              setRecommendations(recs);
+                            } catch (err) {
+                              console.error('Erro ao buscar recomendações:', err);
+                              alert('Erro ao buscar recomendações.');
+                            }
+                          }
+                        }}
+                        disabled={!selectedStudentForInsights}
+                      >
+                        Buscar Recomendações
+                      </Button>
+                    </div>
+                    {recommendations && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Recomendações para o Estudante</h4>
+                        <div className="space-y-2">
+                          {recommendations.recommendations.map((rec, index) => (
+                            <div key={index} className="border rounded p-2">
+                              <p><strong>Disciplina:</strong> {rec.name}</p>
+                              <p><strong>Pré-requisitos:</strong> {rec.prereqs.length > 0 ? rec.prereqs.map(id => disciplines.find(d => d.id === id)?.name || id.toString()).join(', ') : 'Nenhum'}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="cycles" className="mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const cyc = await getCycles();
+                            setCycles(cyc);
+                          } catch (err) {
+                            console.error('Erro ao buscar ciclos:', err);
+                            alert('Erro ao buscar ciclos.');
+                          }
+                        }}
+                      >
+                        Buscar Ciclos
+                      </Button>
+                    </div>
+                    {cycles && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Ciclos do Sistema</h4>
+                        <div className="space-y-2">
+                          {cycles.cycles && cycles.cycles.map((cycle, index) => (
+                            <div key={index} className="border rounded p-2">
+                              <p><strong>Ciclo {index + 1}:</strong><br />{cycle.map(id => disciplines.find(d => d.id === id)?.name || id.toString()).join(', ')}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="importance" className="mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const imp = await getImportance();
+                            setImportance(imp);
+                          } catch (err) {
+                            console.error('Erro ao buscar importância:', err);
+                            alert('Erro ao buscar importância.');
+                          }
+                        }}
+                      >
+                        Buscar Importância
+                      </Button>
+                    </div>
+                    {importance && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Métricas de Importância das Disciplinas</h4>
+                        <p className="mb-4"><strong>Explicação:</strong> {importance.explanation}</p>
+                        <div className="space-y-2">
+                          {importance.metrics.map((metric) => (
+                            <div key={metric.id} className="border rounded p-2">
+                              <p><strong>Disciplina:</strong> {metric.name}</p>
+                              <p><strong>Grau de Saída:</strong> {metric.out_degree}</p>
+                              <p><strong>Descendentes:</strong> {metric.descendants}</p>
+                              <p><strong>Betweenness:</strong> {metric.betweenness.toFixed(4)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="graduation-path" className="mt-4">
+                    <div className="flex gap-2">
+                      <Select
+                        value={selectedStudentForInsights ? selectedStudentForInsights.toString() : ""}
+                        onValueChange={(value) => setSelectedStudentForInsights(value ? parseInt(value) : null)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione um estudante" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {students.map((student) => (
+                            <SelectItem key={student.id} value={student.id.toString()}>
+                              {student.username} ({student.ra_number || 'Sem RA'})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="Disciplinas obrigatórias (IDs separados por vírgula)"
+                        value={requiredDisciplines}
+                        onChange={(e) => setRequiredDisciplines(e.target.value)}
+                      />
+                      <Button
+                        onClick={async () => {
+                          if (selectedStudentForInsights) {
+                            try {
+                              const path = await getGraduationPath(selectedStudentForInsights, requiredDisciplines);
+                              setGraduationPath(path);
+                            } catch (err) {
+                              console.error('Erro ao buscar caminho de graduação:', err);
+                              alert('Erro ao buscar caminho de graduação.');
+                            }
+                          }
+                        }}
+                        disabled={!selectedStudentForInsights}
+                      >
+                        Buscar Caminho de Graduação
+                      </Button>
+                    </div>
+                    {graduationPath && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Caminho de Graduação</h4>
+                        <div className="space-y-2">
+                          {graduationPath.required_ids && (
+                            <div className="border rounded p-2">
+                              <p><strong>Disciplinas Obrigatórias:</strong><br />{graduationPath.required_ids.map((id: number) => disciplines.find(d => d.id === id)?.name || id.toString()).join(', ')}</p>
+                            </div>
+                          )}
+                          {graduationPath.path && (
+                            <div className="border rounded p-2">
+                              <p><strong>Caminho:</strong><br />{graduationPath.path.map((id: number) => disciplines.find(d => d.id === id)?.name || id.toString()).join(', ')}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="graph-insight" className="mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const insight = await getGraphInsight();
+                            setGraphInsight(insight);
+                          } catch (err) {
+                            console.error('Erro ao buscar insight do grafo:', err);
+                            alert('Erro ao buscar insight do grafo.');
+                          }
+                        }}
+                      >
+                        Buscar Insight do Grafo
+                      </Button>
+                    </div>
+                    {graphInsight && (
+                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                        <h4 className="text-lg font-semibold mb-2">Insight do Grafo</h4>
+                        <p className="mb-4"><strong>Insight:</strong> {graphInsight.insight}</p>
+                        <p className="mb-4"><strong>Explicação:</strong> {graphInsight.explanation}</p>
+                        <p className="mb-4"><strong>Número de Nós:</strong> {graphInsight.nodes_count}</p>
+                        <p className="mb-4"><strong>Número de Arestas:</strong> {graphInsight.edges_count}</p>
+                        <div className="space-y-2">
+                          <h5 className="font-semibold">Nós:</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {graphInsight.nodes.map((node) => (
+                              <div key={node.id} className="border rounded p-2">
+                                <p><strong>ID:</strong> {node.id}</p>
+                                <p><strong>Nome:</strong> {node.name}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <h5 className="font-semibold mt-4">Arestas:</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {graphInsight.edges.map((edge, index) => (
+                              <div key={index} className="border rounded p-2">
+                                <p><strong>De:</strong> {edge.from} → <strong>Para:</strong> {edge.to}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
             </TabsContent>
           </Tabs>
