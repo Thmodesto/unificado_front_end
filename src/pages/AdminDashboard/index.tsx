@@ -704,11 +704,13 @@ const handleCreateTeacher = async () => {
             </table>
           </div>
 
-          {/* Courses editing section */}
-          {editingCoursesId !== null && (
-            <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-              <h4 className="text-lg font-semibold mb-2">Editar Cursos - Disciplina ID: {editingCoursesId}</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+          {/* Courses editing sheet */}
+          <Sheet open={editingCoursesId !== null} onOpenChange={(open) => { if (!open) { cancelEditingCourses(); } }}>
+            <SheetContent className="bg-white text-gray-900">
+              <SheetHeader>
+                <SheetTitle>Editar Cursos - Disciplina: {disciplines.find(d => d.id === editingCoursesId)?.name || 'Desconhecida'}</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-2 max-h-60 overflow-y-auto mt-4">
                 {courses.map(course => (
                   <div key={course.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -729,17 +731,19 @@ const handleCreateTeacher = async () => {
                 ))}
               </div>
               <div className="flex gap-2 mt-2">
-                <Button onClick={() => saveEditingCourses(editingCoursesId)}>Salvar</Button>
+                <Button onClick={() => saveEditingCourses(editingCoursesId!)}>Salvar</Button>
                 <Button variant="outline" onClick={cancelEditingCourses}>Cancelar</Button>
               </div>
-            </div>
-          )}
+            </SheetContent>
+          </Sheet>
 
-          {/* Prerequisites editing section */}
-          {editingPrerequisitesId !== null && (
-            <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-              <h4 className="text-lg font-semibold mb-2">Editar Pré-Requisitos - Disciplina ID: {editingPrerequisitesId}</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+          {/* Prerequisites editing sheet */}
+          <Sheet open={editingPrerequisitesId !== null} onOpenChange={(open) => { if (!open) { cancelEditingPrerequisites(); } }}>
+            <SheetContent className="bg-white text-gray-900">
+              <SheetHeader>
+                <SheetTitle>Editar Pré-Requisitos - Disciplina: {disciplines.find(d => d.id === editingPrerequisitesId)?.name || 'Desconhecida'}</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-2 max-h-60 overflow-y-auto mt-4">
                 {disciplines.map(disciplineOption => (
                   <div key={disciplineOption.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -760,11 +764,11 @@ const handleCreateTeacher = async () => {
                 ))}
               </div>
               <div className="flex gap-2 mt-2">
-                <Button onClick={() => saveEditingPrerequisites(editingPrerequisitesId)}>Salvar</Button>
+                <Button onClick={() => saveEditingPrerequisites(editingPrerequisitesId!)}>Salvar</Button>
                 <Button variant="outline" onClick={cancelEditingPrerequisites}>Cancelar</Button>
               </div>
-            </div>
-          )}
+            </SheetContent>
+          </Sheet>
               </div>
             </TabsContent>
 
@@ -945,7 +949,7 @@ const handleCreateTeacher = async () => {
                           return (
                             <>
                               <SheetHeader>
-                                <SheetTitle>Gerenciar Disciplinas do Estudante</SheetTitle>
+                                <SheetTitle>Gerenciar Disciplinas do Estudante: {students.find(s => s.id === studentId)?.username || 'Desconhecido'}</SheetTitle>
                               </SheetHeader>
                               <div className="space-y-4 mt-4">
                                 <div className="overflow-x-auto">
@@ -1182,7 +1186,7 @@ const handleCreateTeacher = async () => {
                       return (
                         <>
                           <SheetHeader>
-                            <SheetTitle>Gerenciar Disciplinas do Professor</SheetTitle>
+                            <SheetTitle>Gerenciar Disciplinas do Professor: {teachers.find(t => t.id === teacherId)?.username || 'Desconhecido'}</SheetTitle>
                           </SheetHeader>
                           <div className="space-y-4 mt-4">
                             <div className="overflow-x-auto">
