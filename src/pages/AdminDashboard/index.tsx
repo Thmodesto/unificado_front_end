@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetHeader, SheetTitle} from "@/components/ui/sheet";
 import GraphView from "@/components/GraphView";
 import {
   getAllUsers,
@@ -881,10 +882,12 @@ const handleCreateTeacher = async () => {
                     </tbody>
                   </table>
                 </div>
-                    {selectedStudentId && (
-                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                        <h4 className="text-lg font-semibold mb-2">Editar Estudante</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Sheet open={!!selectedStudentId} onOpenChange={(open) => { if (!open) { setSelectedStudentId(null); setEditingStudent({}); } }}>
+                      <SheetContent className="bg-white text-gray-900">
+                        <SheetHeader>
+                          <SheetTitle>Editar Estudante</SheetTitle>
+                        </SheetHeader>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
                           <Input
                             placeholder="Username"
                             value={editingStudent.username || ''}
@@ -930,11 +933,11 @@ const handleCreateTeacher = async () => {
                           </label>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <Button onClick={() => handleUpdateStudent(selectedStudentId)}>Salvar</Button>
+                          <Button onClick={() => handleUpdateStudent(selectedStudentId!)}>Salvar</Button>
                           <Button variant="outline" onClick={() => { setSelectedStudentId(null); setEditingStudent({}); }}>Cancelar</Button>
                         </div>
-                      </div>
-                    )}
+                      </SheetContent>
+                    </Sheet>
                     {selectedStudentForDisciplines && (
                       <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
                         <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Estudante</h4>
@@ -1127,10 +1130,12 @@ const handleCreateTeacher = async () => {
                     </tbody>
                   </table>
                 </div>
-                {selectedTeacherId && (
-                  <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Editar Professor</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Sheet open={!!selectedTeacherId} onOpenChange={(open) => { if (!open) { setSelectedTeacherId(null); setEditingTeacher({}); } }}>
+                  <SheetContent className="bg-white text-gray-900">
+                    <SheetHeader>
+                      <SheetTitle>Editar Professor</SheetTitle>
+                    </SheetHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
                       <Input
                         placeholder="Username"
                         value={editingTeacher.username || ''}
@@ -1143,7 +1148,7 @@ const handleCreateTeacher = async () => {
                         onChange={(e) => setEditingTeacher({...editingTeacher, email: e.target.value})}
                       />
                       <Input
-                        placeholder="Funcion├írio"
+                        placeholder="Funcionário"
                         value={editingTeacher.employee_number || ''}
                         onChange={(e) => setEditingTeacher({...editingTeacher, employee_number: e.target.value})}
                       />
@@ -1159,11 +1164,11 @@ const handleCreateTeacher = async () => {
                       </label>
                     </div>
                     <div className="flex gap-2 mt-2">
-                      <Button onClick={() => handleUpdateTeacher(selectedTeacherId)}>Salvar</Button>
+                      <Button onClick={() => handleUpdateTeacher(selectedTeacherId!)}>Salvar</Button>
                       <Button variant="outline" onClick={() => { setSelectedTeacherId(null); setEditingTeacher({}); }}>Cancelar</Button>
                     </div>
-                  </div>
-                )}
+                  </SheetContent>
+                </Sheet>
                   {selectedTeacherForDisciplines && (
                     <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
                       <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Professor</h4>
