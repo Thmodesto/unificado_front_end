@@ -191,8 +191,8 @@ export default function AdminDashboard() {
   const [showInactive, setShowInactive] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState<number | null>(null);
-  const [selectedStudentForDisciplines, setSelectedStudentForDisciplines] = useState<number | null>(null);
-  const [selectedTeacherForDisciplines, setSelectedTeacherForDisciplines] = useState<number | null>(null);
+  const [selectedStudentDisciplineSheet, setSelectedStudentDisciplineSheet] = useState<number | null>(null);
+  const [selectedTeacherDisciplineSheet, setSelectedTeacherDisciplineSheet] = useState<number | null>(null);
 
   const [selectedAddDisciplineStudent, setSelectedAddDisciplineStudent] = useState<Record<number, string>>({});
 
@@ -868,7 +868,7 @@ const handleCreateTeacher = async () => {
                               </Button>
                               <Button
                                 onClick={() => {
-                                  setSelectedStudentForDisciplines(selectedStudentForDisciplines === student.id ? null : student.id);
+                                  setSelectedStudentDisciplineSheet(selectedStudentDisciplineSheet === student.id ? null : student.id);
                                 }}
                                 variant="outline"
                                 size="sm"
@@ -938,110 +938,116 @@ const handleCreateTeacher = async () => {
                         </div>
                       </SheetContent>
                     </Sheet>
-                    {selectedStudentForDisciplines && (
-                      <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                        <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Estudante</h4>
-                        <div className="space-y-4">
-                        <div className="overflow-x-auto">
-{(() => {
-  const student = students.find(s => s.id === selectedStudentForDisciplines);
-  console.log('Render Student Disciplines:', student?.disciplines);
-  if (student?.disciplines && student.disciplines.length > 0) {
-    return (
-      <>
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 px-4 py-2">ID</th>
-            <th className="border border-gray-300 px-4 py-2">Disciplina</th>
-            <th className="border border-gray-300 px-4 py-2">Status</th>
-            <th className="border border-gray-300 px-4 py-2">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {student.disciplines.map((discipline: Discipline) => {
-            const currentStatus = discipline.status || 'pendente';
-            return (
-              <tr key={discipline.id}>
-                <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
-                <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
-                <td className="border border-gray-300 px-4 py-2">
-                  <select
-                    value={currentStatus}
-                    onChange={async (e) => {
-                      const newStatus = e.target.value;
-                      try {
-                        await updateStudentDisciplineStatus(selectedStudentForDisciplines!, discipline.id, newStatus);
-                        fetchAllData();
-                      } catch (error) {
-                        console.error('Erro ao atualizar status da disciplina:', error);
-                        alert('Erro ao atualizar status da disciplina. Tente novamente.');
-                      }
-                    }}
-                    className="border border-gray-300 rounded px-2 py-1"
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="cursando">Cursando</option>
-                    <option value="concluido">Concluído</option>
-                  </select>
-                </td>
-                <td className="border border-gray-300 px-4 py-2">
-                  <Button
-                    onClick={() => handleRemoveDisciplineFromStudent(selectedStudentForDisciplines!, discipline.id)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Remover
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      </>
-    );
-  } else {
-    return <p className="text-gray-500">Nenhuma disciplina atribuída.</p>;
-  }
-})()}
-                          </div>
-                          <div className="flex gap-2">
-                            <Select
-                              value={selectedAddDisciplineStudent[selectedStudentForDisciplines] || ""}
-                              onValueChange={(value) => setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: value})}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecione uma disciplina para adicionar" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {disciplines
-                                  .filter(d => !students.find(s => s.id === selectedStudentForDisciplines)?.disciplines?.some(sd => sd.id === d.id))
-                                  .map((discipline) => (
-                                    <SelectItem key={discipline.id} value={discipline.id.toString()}>
-                                      {discipline.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              onClick={() => {
-                                const disciplineId = parseInt(selectedAddDisciplineStudent[selectedStudentForDisciplines]);
-                                if (disciplineId) {
-                                  handleAddDisciplineToStudent(selectedStudentForDisciplines, disciplineId);
-                                  setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [selectedStudentForDisciplines]: ""});
-                                }
-                              }}
-                            >
-                              Adicionar
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button variant="outline" onClick={() => setSelectedStudentForDisciplines(null)}>Fechar</Button>
-                        </div>
-                      </div>
-                    )}
+                    <Sheet open={!!selectedStudentDisciplineSheet} onOpenChange={(open) => { if (!open) { setSelectedStudentDisciplineSheet(null); } }}>
+                      <SheetContent className="bg-white text-gray-900 w-[30vw] !max-w-none p-0 overflow-x-auto">
+                        {(() => {
+                          const studentId = selectedStudentDisciplineSheet as number;
+                          return (
+                            <>
+                              <SheetHeader>
+                                <SheetTitle>Gerenciar Disciplinas do Estudante</SheetTitle>
+                              </SheetHeader>
+                              <div className="space-y-4 mt-4">
+                                <div className="overflow-x-auto">
+                                  {(() => {
+                                    const student = students.find(s => s.id === studentId);
+                                    console.log('Render Student Disciplines:', student?.disciplines);
+                                    if (student?.disciplines && student.disciplines.length > 0) {
+                                      return (
+                                        <>
+                                          <table className="min-w-full border-collapse border border-gray-500">
+                                            <thead>
+                                              <tr className="bg-gray-100">
+                                                <th className="border border-gray-300 px-4 py-2">ID</th>
+                                                <th className="border border-gray-300 px-4 py-2">Disciplina</th>
+                                                <th className="border border-gray-300 px-4 py-2">Status</th>
+                                                <th className="border border-gray-300 px-4 py-2">Ações</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {student.disciplines.map((discipline: Discipline) => {
+                                                const currentStatus = discipline.status || 'pendente';
+                                                return (
+                                                  <tr key={discipline.id}>
+                                                    <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
+                                                    <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                                                    <td className="border border-gray-300 px-4 py-2">
+                                                      <select
+                                                        value={currentStatus}
+                                                        onChange={async (e) => {
+                                                          const newStatus = e.target.value;
+                                                          try {
+                                                            await updateStudentDisciplineStatus(studentId, discipline.id, newStatus);
+                                                            fetchAllData();
+                                                          } catch (error) {
+                                                            console.error('Erro ao atualizar status da disciplina:', error);
+                                                            alert('Erro ao atualizar status da disciplina. Tente novamente.');
+                                                          }
+                                                        }}
+                                                        className="border border-gray-300 rounded px-2 py-1"
+                                                      >
+                                                        <option value="pendente">Pendente</option>
+                                                        <option value="cursando">Cursando</option>
+                                                        <option value="concluido">Concluído</option>
+                                                      </select>
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2">
+                                                      <Button
+                                                        onClick={() => handleRemoveDisciplineFromStudent(studentId, discipline.id)}
+                                                        variant="outline"
+                                                        size="sm"
+                                                      >
+                                                        Remover
+                                                      </Button>
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              })}
+                                            </tbody>
+                                          </table>
+                                        </>
+                                      );
+                                    } else {
+                                      return <p className="text-gray-500">Nenhuma disciplina atribuída.</p>;
+                                    }
+                                  })()}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Select
+                                    value={selectedAddDisciplineStudent[studentId] || ""}
+                                    onValueChange={(value) => setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [studentId]: value})}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {disciplines
+                                        .filter(d => !students.find(s => s.id === studentId)?.disciplines?.some(sd => sd.id === d.id))
+                                        .map((discipline) => (
+                                          <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                            {discipline.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    onClick={() => {
+                                      const disciplineId = parseInt(selectedAddDisciplineStudent[studentId]);
+                                      if (disciplineId) {
+                                        handleAddDisciplineToStudent(studentId, disciplineId);
+                                        setSelectedAddDisciplineStudent({...selectedAddDisciplineStudent, [studentId]: ""});
+                                      }
+                                    }}
+                                  >
+                                    Adicionar
+                                  </Button>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </SheetContent>
+                    </Sheet>
               </div>
             </TabsContent>
 
@@ -1116,7 +1122,7 @@ const handleCreateTeacher = async () => {
                               </Button>
                               <Button
                                 onClick={() => {
-                                  setSelectedTeacherForDisciplines(selectedTeacherForDisciplines === teacher.id ? null : teacher.id);
+                                  setSelectedTeacherDisciplineSheet(selectedTeacherDisciplineSheet === teacher.id ? null : teacher.id);
                                 }}
                                 variant="outline"
                                 size="sm"
@@ -1169,78 +1175,87 @@ const handleCreateTeacher = async () => {
                     </div>
                   </SheetContent>
                 </Sheet>
-                  {selectedTeacherForDisciplines && (
-                    <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                      <h4 className="text-lg font-semibold mb-2">Gerenciar Disciplinas do Professor</h4>
-                      <div className="space-y-4">
-                        <div className="overflow-x-auto">
-                          {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.length ? (
-                            <table className="w-full border-collapse border border-gray-300">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="border border-gray-300 px-4 py-2">ID</th>
-                                  <th className="border border-gray-300 px-4 py-2">Disciplina</th>
-                                  <th className="border border-gray-300 px-4 py-2">Ações</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.map((discipline) => (
-                                  <tr key={discipline.id}>
-                                    <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
-                                    <td className="border border-gray-300 px-4 py-2">
-                                      <Button
-                                        onClick={() => handleRemoveDisciplineFromTeacher(selectedTeacherForDisciplines, discipline.id)}
-                                        variant="outline"
-                                        size="sm"
-                                      >
-                                        Remover
-                                      </Button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Select
-                            value={selectedAddDisciplineTeacher[selectedTeacherForDisciplines] || ""}
-                            onValueChange={(value) => setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: value})}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione uma disciplina para adicionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {disciplines
-                                .filter(d => !teachers.find(t => t.id === selectedTeacherForDisciplines)?.disciplines?.some(td => td.id === d.id))
-                                .map((discipline) => (
-                                  <SelectItem key={discipline.id} value={discipline.id.toString()}>
-                                    {discipline.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={() => {
-                              const disciplineId = parseInt(selectedAddDisciplineTeacher[selectedTeacherForDisciplines]);
-                              if (disciplineId) {
-                                handleAddDisciplineToTeacher(selectedTeacherForDisciplines, disciplineId);
-                                setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [selectedTeacherForDisciplines]: ""});
-                              }
-                            }}
-                          >
-                            Adicionar
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" onClick={() => setSelectedTeacherForDisciplines(null)}>Fechar</Button>
-                      </div>
-                    </div>
-                  )}
+                <Sheet open={!!selectedTeacherDisciplineSheet} onOpenChange={(open) => { if (!open) { setSelectedTeacherDisciplineSheet(null); } }}>
+                  <SheetContent className="bg-white text-gray-900 w-full max-w-none">
+                    {(() => {
+                      const teacherId = selectedTeacherDisciplineSheet as number;
+                      return (
+                        <>
+                          <SheetHeader>
+                            <SheetTitle>Gerenciar Disciplinas do Professor</SheetTitle>
+                          </SheetHeader>
+                          <div className="space-y-4 mt-4">
+                            <div className="overflow-x-auto">
+                              {(() => {
+                                const teacher = teachers.find(t => t.id === teacherId);
+                                return teacher?.disciplines?.length ? (
+                                  <table className="w-full border-collapse border border-gray-300">
+                                    <thead>
+                                      <tr className="bg-gray-100">
+                                        <th className="border border-gray-300 px-4 py-2">ID</th>
+                                        <th className="border border-gray-300 px-4 py-2">Disciplina</th>
+                                        <th className="border border-gray-300 px-4 py-2">Ações</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {teacher.disciplines.map((discipline) => (
+                                        <tr key={discipline.id}>
+                                          <td className="border border-gray-300 px-4 py-2">{discipline.id}</td>
+                                          <td className="border border-gray-300 px-4 py-2">{discipline.name}</td>
+                                          <td className="border border-gray-300 px-4 py-2">
+                                            <Button
+                                              onClick={() => handleRemoveDisciplineFromTeacher(teacherId, discipline.id)}
+                                              variant="outline"
+                                              size="sm"
+                                            >
+                                              Remover
+                                            </Button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                ) : (
+                                  <p className="text-gray-500">Nenhuma disciplina atribuída.</p>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex gap-2">
+                              <Select
+                                value={selectedAddDisciplineTeacher[teacherId] || ""}
+                                onValueChange={(value) => setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [teacherId]: value})}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione uma disciplina para adicionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {disciplines
+                                    .filter(d => !teachers.find(t => t.id === teacherId)?.disciplines?.some(td => td.id === d.id))
+                                    .map((discipline) => (
+                                      <SelectItem key={discipline.id} value={discipline.id.toString()}>
+                                        {discipline.name}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                onClick={() => {
+                                  const disciplineId = parseInt(selectedAddDisciplineTeacher[teacherId]);
+                                  if (disciplineId) {
+                                    handleAddDisciplineToTeacher(teacherId, disciplineId);
+                                    setSelectedAddDisciplineTeacher({...selectedAddDisciplineTeacher, [teacherId]: ""});
+                                  }
+                                }}
+                              >
+                                Adicionar
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </SheetContent>
+                </Sheet>
               </div>
             </TabsContent>
 
